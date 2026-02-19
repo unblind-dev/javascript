@@ -34,12 +34,6 @@ export interface MetricMetadata {
   unit: {
     /// The unique, case-sensitive UCUM identifier (e.g., "mL", "m/s2")
     code?: string;
-    /// The human-readable primary name (e.g., "milliliter")
-    name?: string;
-    /// Alternate names (e.g., "cubic centimeter" for "cm3")
-    synonym?: string;
-    /// The physical dimension or property (e.g., "Volume", "Mass")
-    category?: string;
   };
   type: MetricType;
 }

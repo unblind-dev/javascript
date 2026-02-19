@@ -1,6 +1,6 @@
 {
   "name": "@unblind/nextjs",
-  "version": "0.1.0-alpha.22",
+  "version": "0.1.0-beta.1",
   "description": "Unblind Next.js library",
   "main": "dist/index.js",
   "module": "dist/index.mjs",

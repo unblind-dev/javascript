@@ -473,6 +473,10 @@ const parseUnit = (unit?: string) => {
     const sUnit = String(unit).toLowerCase().trim();
     if (sUnit === "by") {
       return "bytes";
+    } else if (sUnit.startsWith("{") && sUnit.endsWith("}")) {
+      // This is not always the case but is preferable over rendering {unit}
+      // e.g. {cpu} or {cores}
+      return "short";
     }
   }
 
