@@ -12,8 +12,8 @@ importers:
         specifier: ^1.2.0
         version: 1.2.0(@types/react@19.2.14)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
       '@unblind/nextjs':
-        specifier: 0.1.0-alpha.22
-        version: 0.1.0-alpha.22(next@16.1.6(@babel/core@7.29.0)(react-dom@19.2.3(react@19.2.3))(react@19.2.3))(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
+        specifier: 0.1.0-beta.1
+        version: 0.1.0-beta.1(next@16.1.6(@babel/core@7.29.0)(react-dom@19.2.3(react@19.2.3))(react@19.2.3))(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
       class-variance-authority:
         specifier: ^0.7.1
         version: 0.7.1
@@ -1517,14 +1517,14 @@ packages:
     resolution: {integrity: sha512-q+SL+b+05Ud6LbEE35qe4A99P+htKTKVbyiNEe45eCbJFyh/HVK9QXwlrbz+Q4L8SOW4roxSVwXYj4DMBT7Ieg==}
     engines: {node: ^18.18.0 || ^20.9.0 || >=21.1.0}
 
-  '@unblind/nextjs@0.1.0-alpha.22':
-    resolution: {integrity: sha512-dC8fxf5RO0OgvasoVvUlT8B9d7l3AiV6LGF03HySbIUjaIAnLmnnEqUam2miYUsKm/+7ka3POHSq00Hk3RYs7A==}
+  '@unblind/nextjs@0.1.0-beta.1':
+    resolution: {integrity: sha512-7EH2NecLVO8ashPq+g+2iQHgxUiDmPNEn+4t1oYoS1Bct6aLaaOWVluKfi5xPCkR6HWDSjfqnpv4Ul1ewMmS8A==}
     engines: {node: '>=18'}
     peerDependencies:
       next: ^15.2.8 || ^15.3.8 || ^15.4.10 || ^15.5.9 || ^15.6.0-0 || ^16.0.10 || ^16.1.0-0
 
-  '@unblind/react@0.1.0-alpha.23':
-    resolution: {integrity: sha512-Sdu1KpUVo0XSwvakqkWDVtQ+4DGWsFVw3RWTCEs1dWjnc8sRYt2juQ0fIGeMUKEDegVpUHbUeqEVVTcg9rdNfw==}
+  '@unblind/react@0.1.0-beta.1':
+    resolution: {integrity: sha512-eyficyI8IVaA2GxzPhYlbXG0WyOhRtRaf+VhksmLOuJQZugm+F6iW8zhk2V0cRJJqmtHTQGODPgeNyAZtZs2Jg==}
     engines: {node: '>=18'}
     peerDependencies:
       react: ^18.0.0 || ~19.0.3 || ~19.1.4 || ~19.2.3 || ~19.3.0-0
@@ -5329,15 +5329,15 @@ snapshots:
       '@typescript-eslint/types': 8.56.0
       eslint-visitor-keys: 5.0.0
 
-  '@unblind/nextjs@0.1.0-alpha.22(next@16.1.6(@babel/core@7.29.0)(react-dom@19.2.3(react@19.2.3))(react@19.2.3))(react-dom@19.2.3(react@19.2.3))(react@19.2.3)':
+  '@unblind/nextjs@0.1.0-beta.1(next@16.1.6(@babel/core@7.29.0)(react-dom@19.2.3(react@19.2.3))(react@19.2.3))(react-dom@19.2.3(react@19.2.3))(react@19.2.3)':
     dependencies:
-      '@unblind/react': 0.1.0-alpha.23(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
+      '@unblind/react': 0.1.0-beta.1(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
       next: 16.1.6(@babel/core@7.29.0)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
     transitivePeerDependencies:
       - react
       - react-dom
 
-  '@unblind/react@0.1.0-alpha.23(react-dom@19.2.3(react@19.2.3))(react@19.2.3)':
+  '@unblind/react@0.1.0-beta.1(react-dom@19.2.3(react@19.2.3))(react@19.2.3)':
     dependencies:
       '@floating-ui/dom': 1.7.5
       '@tanstack/react-query': 5.90.21(react@19.2.3)
