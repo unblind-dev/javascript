@@ -45,7 +45,7 @@
 
    ```css
    /* file: globals.css */
-   @import "@unblind/react/styles.css";
+   @import "@unblind/nextjs/styles.css";
    @import "tailwindcss";
    /* ... */
    ```
