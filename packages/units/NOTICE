@@ -1,0 +1,8 @@
+This product includes software developed by Grafana Labs:
+
+- @grafana/data (https://github.com/grafana/grafana/tree/main/packages/grafana-data)
+- @grafana/i18n (https://github.com/grafana/grafana/tree/main/packages/grafana-i18n)
+- @grafana/schema (https://github.com/grafana/grafana/tree/main/packages/grafana-schema)
+
+Modifications by Joaquin Colacci.
+Licensed under the Apache License, Version 2.0

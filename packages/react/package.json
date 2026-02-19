@@ -1,0 +1,72 @@
+{
+  "name": "@unblind/react",
+  "version": "0.1.0-alpha.23",
+  "description": "Unblind React library",
+  "main": "dist/index.js",
+  "module": "dist/index.mjs",
+  "types": "dist/index.d.ts",
+  "keywords": [
+    "unblind",
+    "react",
+    "monitoring",
+    "timeseries",
+    "charts"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js"
+    },
+    "./styles.css": "./dist/index.css"
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "lint": "eslint src/",
+    "check-types": "tsc --noEmit",
+    "storybook": "storybook dev -p 6006",
+    "build-storybook": "storybook build -o storybook-static",
+    "chromatic": "npx chromatic --project-token=chpt_6791b22ac42f2d8"
+  },
+  "dependencies": {
+    "@floating-ui/dom": "^1.7.4",
+    "@tanstack/react-query": "^5.0.0",
+    "@unblind/units": "workspace:*",
+    "ms": "^2.1.3",
+    "uplot": "^1.6.32"
+  },
+  "devDependencies": {
+    "@chromatic-com/storybook": "^5.0.0",
+    "@storybook/addon-a11y": "^10.2.3",
+    "@storybook/addon-docs": "^10.2.3",
+    "@storybook/addon-vitest": "^10.2.3",
+    "@storybook/cli": "^10.2.3",
+    "@storybook/react-vite": "^10.2.3",
+    "@types/ms": "^2.1.0",
+    "@types/react": "^18.0.0",
+    "@types/react-dom": "^18.0.0",
+    "autoprefixer": "^10.4.20",
+    "chromatic": "^15.0.0",
+    "eslint": "^9.22.0",
+    "jest": "^30.2.0",
+    "mocha": "^11.7.5",
+    "postcss": "^8.5.6",
+    "prettier": "^3.5.3",
+    "storybook": "^10.2.3",
+    "tsup": "^8.3.5",
+    "typescript": "5.8.2",
+    "vitest": "^4.0.18"
+  },
+  "peerDependencies": {
+    "react": "^18.0.0 || ~19.0.3 || ~19.1.4 || ~19.2.3 || ~19.3.0-0",
+    "react-dom": "^18.0.0 || ~19.0.3 || ~19.1.4 || ~19.2.3 || ~19.3.0-0"
+  },
+  "packageManager": "pnpm@9.0.0",
+  "engines": {
+    "node": ">=18"
+  }
+}

@@ -1,0 +1,106 @@
+/* Container */
+.ub-tooltip {
+  display: flex;
+  width: fit-content;
+  min-width: 320px;
+  max-width: 520px;
+  flex-direction: column;
+  font-size: 0.875rem;
+  gap: 0.5rem;
+  border-radius: var(--ub-radius);
+  border: 1px solid var(--ub-border);
+  padding: 0.5rem 0rem 0.5rem 0rem;
+  background-color: var(--ub-popover);
+  overflow: hidden;
+}
+
+.ub-tooltip-datetime {
+  font-weight: 500;
+}
+
+.ub-tooltip-divider {
+  height: 1px;
+  width: 100%;
+  border: none;
+  background: var(--ub-border);
+  margin: 0;
+}
+
+.ub-tooltip-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-left: 1rem;
+  padding-right: 1rem;
+  color: var(--ub-muted-foreground);
+}
+
+.ub-tooltip-content {
+  position: relative;
+  display: grid;
+  column-gap: calc(1rem - 4px);
+  row-gap: calc(0.25rem);
+  padding-right: 1rem;
+}
+
+.ub-tooltip-multiple-metrics-attributes .ub-tooltip-content {
+  grid-template-columns: min-content max-content 1fr auto;
+}
+
+.ub-tooltip-multiple-attributes .ub-tooltip-content {
+  grid-template-columns: min-content 1fr auto;
+}
+
+.ub-tooltip-multiple-metrics .ub-tooltip-content {
+  grid-template-columns: min-content 1fr auto;
+}
+
+.ub-tooltip-serie {
+  display: contents;
+}
+
+.ub-tooltip-serie-color {
+  height: 1em;
+  width: 4px;
+  align-self: center;
+  border-radius: 0px 1.5px 1.5px 0px;
+}
+
+.ub-tooltip-multiple-attributes .ub-tooltip-serie-metric {
+  color: var(--ub-muted-foreground);
+}
+
+.ub-tooltip-multiple-metrics-attributes .ub-tooltip-serie-metric {
+  color: var(--ub-muted-foreground);
+}
+
+.ub-tooltip-summary {
+  display: flex;
+  justify-content: space-between;
+  padding-left: 1rem;
+  padding-right: 1rem;
+  padding-top: 0.125rem;
+  color: var(--ub-muted-foreground);
+  opacity: 90%;
+}
+
+.ub-tooltip-serie-value {
+  text-align: right;
+  font-weight: 500;
+}
+
+.ub-tooltip-serie-value-empty {
+  font-weight: 400;
+  color: var(--ub-text-disabled);
+}
+
+.ub-tooltip-serie-attribute-divider::before {
+  content: attr(data-text);
+}
+
+.ub-tooltip-no-data {
+  padding: 0 0.3rem 0 0.3rem;
+  font-style: italic;
+  color: var(--ub-placeholder);
+  line-height: 1rem;
+}

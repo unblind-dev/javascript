@@ -1,0 +1,63 @@
+.ub-default {
+  display: flex;
+  height: 100%;
+  align-items: center;
+  justify-content: center;
+  color: var(--ub-muted-foreground);
+}
+
+.ub-empty-content {
+  text-align: center;
+}
+
+.ub-empty-icon-wrapper {
+  margin: 0 auto;
+  display: flex;
+  height: 2.5rem;
+  width: 2.5rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9999px;
+  background-color: var(--ub-muted);
+}
+
+.ub-icon {
+  width: 1.25rem;
+  height: 1.25rem;
+  color: var(--ub-muted-foreground);
+}
+
+.ub-empty-text {
+  margin-top: 0.5rem;
+  font-size: 0.875rem;
+  color: var(--ub-muted-foreground);
+}
+
+.ub-empty-text::before {
+  content: attr(data-text);
+}
+
+.ub-default-loading {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    var(--ub-muted) 25%,
+    var(--ub-muted) 50%,
+    var(--ub-muted) 75%
+  );
+  border-radius: var(--ub-radius);
+  overflow: hidden;
+  animation: ub-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes ub-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}

@@ -1,0 +1,59 @@
+{
+  "name": "@unblind/units",
+  "version": "0.1.0-alpha.1",
+  "description": "Unblind Units library",
+  "main": "dist/index.js",
+  "module": "dist/index.mjs",
+  "types": "dist/index.d.ts",
+  "keywords": [
+    "unblind",
+    "react",
+    "monitoring",
+    "timeseries",
+    "charts"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "lint": "eslint src/",
+    "check-types": "tsc --noEmit",
+    "test": "TZ=Pacific/Easter jest"
+  },
+  "devDependencies": {
+    "@types/jest": "^30.0.0",
+    "@types/mocha": "^10.0.10",
+    "jest": "30.2.0",
+    "jest-environment-jsdom": "^30.2.0",
+    "mocha": "11.7.5",
+    "ts-jest": "^29.4.6",
+    "tsup": "^8.3.5",
+    "typescript": "5.8.2"
+  },
+  "packageManager": "pnpm@9.0.0",
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "@types/lodash": "^4.17.23",
+    "date-fns": "^4.1.0",
+    "fast-deep-equal": "^3.1.3",
+    "lodash": "^4.17.23",
+    "micro-memoize": "^4.1.2",
+    "moment": "^2.30.1",
+    "moment-timezone": "^0.6.0"
+  },
+  "peerDependencies": {
+    "react": "^18.0.0 || ~19.0.3 || ~19.1.4 || ~19.2.3 || ~19.3.0-0",
+    "react-dom": "^18.0.0 || ~19.0.3 || ~19.1.4 || ~19.2.3 || ~19.3.0-0"
+  }
+}
