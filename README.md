@@ -175,7 +175,7 @@
 const { times, series, metadata, isLoading } = useTimeseries({
   metrics: "nodejs.eventloop.p50",
 });
-const { logs, isLoading } = useLogs({ filters });
+const { logs, isLoading } = useLogs({ severity: ["ERROR", "WARN"] });
 
 // Returns global metrics
 const { metrics } = useMetrics();
