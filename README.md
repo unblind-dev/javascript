@@ -21,6 +21,7 @@
   <p>
     This repository contains all the unblind JavaScript SDKs under the <code>@unblind</code> namespace.
   </p>
+  <a href="https://storybook.unblind.dev" target="_blank"><img src="https://raw.githubusercontent.com/storybooks/brand/master/badge/badge-storybook.svg"></a>
 </div>
 
 # Getting started
