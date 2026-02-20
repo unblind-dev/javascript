@@ -151,7 +151,7 @@ function findBestIncrement(targetSeconds: number): {
  * X-Axis: Generates splits using the x latest timestamp and soonest timestamp.
  */
 function generateRelativeXAxisSplits(
-  u: uPlot,
+  _: uPlot,
   min: number,
   max: number,
 ): number[] {
@@ -262,13 +262,8 @@ function generateRelativeXAxisValues(
 ): string[] {
   if (splits.length === 0) return [];
 
-  return splits.map((timestamp, index) => {
-    // Only show labels for first and last positions
-    if (index === 0 || index === splits.length - 1) {
-      // Convert seconds to milliseconds for dateTimeFormatTimeAgo
-      return dateTimeFormatTimeAgo(timestamp * 1000, { timeZone });
-    }
-    return ""; // Return empty string for all other positions
+  return splits.map((timestamp) => {
+    return dateTimeFormatTimeAgo(timestamp * 1000, { timeZone });
   });
 }
 
