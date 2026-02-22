@@ -178,14 +178,14 @@ export function createYAxisConfig(
     space: (self, _axisIdx, _scaleMin, _scaleMax, _plotDim) => {
       const height = self.height;
       if (height <= 100) {
-          return 30; // At least 2 ticks, better if 3
-      } if (height <= 150) {
-          return 35; // Bettween 3 and 4 ticks
-      } if (height <= 200) {
+        return 30; // At least 2 ticks, better if 3
+      } else if (height <= 150) {
+        return 35; // Bettween 3 and 4 ticks
+      } else if (height <= 200) {
         return 45; // Between 3 and 4 ticks
       } else if (height <= 250) {
-          return 55; // Between 3 and 4 ticks
-      } if (height <= 300) {
+        return 55; // Between 3 and 4 ticks
+      } else if (height <= 300) {
         return 60; // Between 4 and 5 ticks
       } else {
         return 70; // At least 4 ticks

@@ -15,7 +15,7 @@ type Story = StoryObj<typeof Tooltip>;
 export const SimpleMetric: Story = {
   args: {
     timestamp: new Date().getTime() / 1000,
-    tooltipSerieList: [
+    serieList: [
       {
         metric: {
           name: "pod.network.latency",
@@ -35,13 +35,14 @@ export const SimpleMetric: Story = {
     ],
     timeZone: undefined,
     spansMultipleDays: false,
+    maxAttributeKeySetCount: 0,
   },
 };
 
 export const MultipleMetrics: Story = {
   args: {
     timestamp: new Date().getTime() / 1000,
-    tooltipSerieList: [
+    serieList: [
       {
         metric: {
           name: "pod.network.latency.p50",
@@ -93,13 +94,14 @@ export const MultipleMetrics: Story = {
     ],
     timeZone: undefined,
     spansMultipleDays: false,
+    maxAttributeKeySetCount: 0,
   },
 };
 
 export const MetricAndAttribute: Story = {
   args: {
     timestamp: new Date().getTime() / 1000,
-    tooltipSerieList: [
+    serieList: [
       {
         metric: {
           name: "pod.network.latency.p50",
@@ -141,13 +143,14 @@ export const MetricAndAttribute: Story = {
     spansMultipleDays: false,
     hasMultipleAttributes: true,
     hasAttributes: true,
+    maxAttributeKeySetCount: 1,
   },
 };
 
 export const MultipleAttributes: Story = {
   args: {
     timestamp: new Date().getTime() / 1000,
-    tooltipSerieList: [
+    serieList: [
       {
         metric: {
           name: "pod.network.latency",
@@ -191,13 +194,14 @@ export const MultipleAttributes: Story = {
     spansMultipleDays: false,
     hasMultipleAttributes: true,
     hasAttributes: true,
+    maxAttributeKeySetCount: 2,
   },
 };
 
 export const MultipleMetricsAndAttributes: Story = {
   args: {
     timestamp: new Date().getTime() / 1000,
-    tooltipSerieList: [
+    serieList: [
       {
         metric: {
           name: "pod.network.latency.p50",
@@ -357,13 +361,14 @@ export const MultipleMetricsAndAttributes: Story = {
     hasMultipleAttributes: true,
     hasAttributes: true,
     hasMultipleMetrics: true,
+    maxAttributeKeySetCount: 2,
   },
 };
 
 export const LimitDisplay: Story = {
   args: {
     timestamp: new Date().getTime() / 1000,
-    tooltipSerieList: [
+    serieList: [
       {
         metric: {
           name: "pod.network.latency.p50",
@@ -523,13 +528,14 @@ export const LimitDisplay: Story = {
     hasMultipleAttributes: true,
     hasAttributes: true,
     hasMultipleMetrics: true,
+    maxAttributeKeySetCount: 2,
   },
 };
 
 export const LimitUndefinedDisplay: Story = {
   args: {
     timestamp: new Date().getTime() / 1000,
-    tooltipSerieList: [
+    serieList: [
       {
         metric: {
           name: "pod.network.latency.p50",
@@ -689,13 +695,14 @@ export const LimitUndefinedDisplay: Story = {
     hasMultipleAttributes: true,
     hasAttributes: true,
     hasMultipleMetrics: true,
+    maxAttributeKeySetCount: 2,
   },
 };
 
 export const LimitZerosDisplay: Story = {
   args: {
     timestamp: new Date().getTime() / 1000,
-    tooltipSerieList: [
+    serieList: [
       {
         metric: {
           name: "pod.network.latency.p50",
@@ -855,13 +862,14 @@ export const LimitZerosDisplay: Story = {
     hasMultipleAttributes: true,
     hasAttributes: true,
     hasMultipleMetrics: true,
+    maxAttributeKeySetCount: 2,
   },
 };
 
 export const OverflowValues: Story = {
   args: {
     timestamp: new Date().getTime() / 1000,
-    tooltipSerieList: [
+    serieList: [
       {
         metric: {
           name: "very.long.metric.very.long.metric.very.long.metric.very.long.metric.pod.network.latency.p50",
@@ -925,13 +933,14 @@ export const OverflowValues: Story = {
     ],
     timeZone: undefined,
     spansMultipleDays: false,
+    maxAttributeKeySetCount: 2,
   },
 };
 
 export const OverflowMetrics: Story = {
   args: {
     timestamp: new Date().getTime() / 1000,
-    tooltipSerieList: [
+    serieList: [
       {
         metric: {
           name: "pod.network.latency.p50",
@@ -985,13 +994,14 @@ export const OverflowMetrics: Story = {
     ],
     timeZone: undefined,
     spansMultipleDays: false,
+    maxAttributeKeySetCount: 0,
   },
 };
 
 export const OverflowAttributes: Story = {
   args: {
     timestamp: new Date().getTime() / 1000,
-    tooltipSerieList: [
+    serieList: [
       {
         metric: {
           name: "very.long.metric.very.long.metric.very.long.metric.very.long.metric.pod.network.latency.p50",
@@ -1056,13 +1066,14 @@ export const OverflowAttributes: Story = {
     spansMultipleDays: false,
     hasMultipleAttributes: true,
     hasAttributes: true,
+    maxAttributeKeySetCount: 2,
   },
 };
 
 export const Empty: Story = {
   args: {
     timestamp: new Date().getTime() / 1000,
-    tooltipSerieList: [],
+    serieList: [],
     timeZone: undefined,
     spansMultipleDays: false,
   },

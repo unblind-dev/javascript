@@ -96,6 +96,7 @@ function buildTooltipSerieList(
   timeZone?: string,
 ): {
   tooltipSerieList: TooltipSerie[];
+  maxAttributeKeySetCount: number;
   hasAttributes: boolean;
   hasMultipleMetrics: boolean;
   hasMultipleAttributes: boolean;
@@ -108,6 +109,7 @@ function buildTooltipSerieList(
   const seenMetrics = new Set<string>();
   const seenAttributeKeys = new Set<string>();
   let hasAnyAttributes = false;
+  let maxAttributeKeySetCount = 0;
 
   for (let seriesIndex = 1; seriesIndex < u.series.length; seriesIndex++) {
     let rawVal = (u.data[seriesIndex]?.[actualIdx] ?? null) as number | null;
@@ -133,9 +135,14 @@ function buildTooltipSerieList(
 
     seenMetrics.add(originalSerie.metric);
 
-    const attributes = originalSerie?.attributes;
-    if (attributes && Object.keys(attributes).length > 0) {
+    const attributes = originalSerie?.attributes || {};
+    const attributesKeySetLength = Object.keys(attributes).length;
+    if (attributesKeySetLength > 0) {
       hasAnyAttributes = true;
+
+      if (attributesKeySetLength > maxAttributeKeySetCount) {
+        maxAttributeKeySetCount = attributesKeySetLength;
+      }
 
       for (const key in attributes) {
         seenAttributeKeys.add(key);
@@ -170,6 +177,7 @@ function buildTooltipSerieList(
     hasAttributes: hasAnyAttributes,
     hasMultipleMetrics: seenMetrics.size > 1,
     hasMultipleAttributes: seenAttributeKeys.size > 1,
+    maxAttributeKeySetCount: maxAttributeKeySetCount,
     spansMultipleDays: checkIfSpansMultipleDays(xData, timeZone),
   };
 }
@@ -252,6 +260,7 @@ export function tooltipPlugin(
           hasAttributes,
           hasMultipleAttributes,
           hasMultipleMetrics,
+          maxAttributeKeySetCount,
           spansMultipleDays,
         } = buildTooltipSerieList(
           u,
@@ -269,19 +278,20 @@ export function tooltipPlugin(
         const tooltipElement = AppearanceTooltip ? (
           <AppearanceTooltip
             timestamp={timestamp}
-            tooltipSerieList={tooltipSerieList}
+            serieList={tooltipSerieList}
             timeZone={timeZone}
           />
         ) : (
           <Tooltip
             timestamp={timestamp}
-            tooltipSerieList={tooltipSerieList}
+            serieList={tooltipSerieList}
             timeZone={timeZone}
             spansMultipleDays={spansMultipleDays}
             stacked={stacked}
             hasAttributes={hasAttributes}
             hasMultipleAttributes={hasMultipleAttributes}
             hasMultipleMetrics={hasMultipleMetrics}
+            maxAttributeKeySetCount={maxAttributeKeySetCount}
             visibilityLimit={visibilityLimit}
             invertSort={invertSort}
             disableSuggestedLabel={disableSuggestedLabel}

@@ -5,7 +5,7 @@ import { TooltipSerie } from "@/types";
 // Types
 export interface TooltipProps {
   timestamp: number;
-  tooltipSerieList: TooltipSerie[];
+  serieList: TooltipSerie[];
   timeZone?: string;
   stacked?: boolean;
   invertSort?: boolean;
@@ -18,6 +18,7 @@ interface TooltipExtendedProps extends TooltipProps {
   hasMultipleMetrics: boolean;
   hasMultipleAttributes: boolean;
   hasAttributes: boolean;
+  maxAttributeKeySetCount: number;
 }
 
 const DEFAULT_VISIBILITY_LIMIT = 6;
@@ -46,7 +47,11 @@ const TooltipContext = createContext<
   | (Pick<
       TooltipProps,
       "disableSuggestedLabel" | "invertSort" | "visibilityLimit"
-    > & { formattedTime: string })
+    > & {
+      formattedTime: string;
+      serieList: Array<TooltipSerie>;
+      maxAttributeKeySetCount: number;
+    })
   | null
 >(null);
 
@@ -62,12 +67,16 @@ function TooltipProvider({
   formattedTime,
   tooltip,
   children,
+  serieList,
+  maxAttributeKeySetCount,
 }: PropsWithChildren & {
+  maxAttributeKeySetCount: number;
   formattedTime: string;
   tooltip: Pick<
     TooltipProps,
     "disableSuggestedLabel" | "invertSort" | "visibilityLimit"
   >;
+  serieList: Array<TooltipSerie>;
 }) {
   return (
     <TooltipContext.Provider
@@ -76,6 +85,8 @@ function TooltipProvider({
         disableSuggestedLabel: tooltip.disableSuggestedLabel,
         invertSort: tooltip.invertSort,
         visibilityLimit: tooltip.visibilityLimit || DEFAULT_VISIBILITY_LIMIT,
+        serieList,
+        maxAttributeKeySetCount,
       }}
     >
       {children}
@@ -90,24 +101,15 @@ function Divider({
   return <hr role="presentation" {...props} className={className} />;
 }
 
-function MetricsTooltip({
-  unitCategory,
-  tooltipSerieList,
-}: {
-  unitCategory: string;
-  tooltipSerieList: Array<TooltipSerie>;
-}) {
-  const { visibilityLimit, formattedTime } = useTooltip();
-  const visibleSeries = tooltipSerieList.slice(0, visibilityLimit);
-  const afterLimit = tooltipSerieList.slice(visibilityLimit);
+function MetricsTooltip() {
+  const { visibilityLimit, formattedTime, serieList } = useTooltip();
+  const visibleSeries = serieList.slice(0, visibilityLimit);
+  const afterLimit = serieList.slice(visibilityLimit);
 
   return (
     <div className="ub-tooltip ub-tooltip-multiple-metrics">
       <Header>
         <DateTime>{formattedTime}</DateTime>
-        <div className="ub-tooltip-header-right">
-          <UnitCategory>{unitCategory}</UnitCategory>
-        </div>
       </Header>
       <Divider />
       <div>
@@ -126,29 +128,16 @@ function MetricsTooltip({
   );
 }
 
-function MultipleAttributesTooltip({
-  tooltipSerieList,
-}: {
-  tooltipSerieList: Array<TooltipSerie>;
-}) {
-  const { visibilityLimit, disableSuggestedLabel, formattedTime } =
-    useTooltip();
-  const firstSerie = tooltipSerieList[0];
+function MultipleAttributesTooltip() {
+  const { visibilityLimit, formattedTime, serieList } = useTooltip();
 
-  const visibleSeries = tooltipSerieList.slice(0, visibilityLimit);
-  const afterLimit = tooltipSerieList.slice(visibilityLimit);
+  const visibleSeries = serieList.slice(0, visibilityLimit);
+  const afterLimit = serieList.slice(visibilityLimit);
 
   return (
     <div className="ub-tooltip ub-tooltip-multiple-attributes">
       <Header>
         <DateTime>{formattedTime}</DateTime>
-        <div className="ub-tooltip-header-right">
-          <span className="ub-tooltip-serie-metric">
-            {firstSerie?.metric.label ||
-              (!disableSuggestedLabel && firstSerie?.metric.suggestedLabel) ||
-              firstSerie?.metric.name}
-          </span>
-        </div>
       </Header>
       <Divider />
       <div>
@@ -167,24 +156,15 @@ function MultipleAttributesTooltip({
   );
 }
 
-function MultipleAttributesMultipleMetricsTooltip({
-  tooltipSerieList,
-  unitCategory,
-}: {
-  unitCategory: string;
-  tooltipSerieList: Array<TooltipSerie>;
-}) {
-  const { visibilityLimit, formattedTime } = useTooltip();
-  const visibleSeries = tooltipSerieList.slice(0, visibilityLimit);
-  const afterLimit = tooltipSerieList.slice(visibilityLimit);
+function MultipleAttributesMultipleMetricsTooltip() {
+  const { visibilityLimit, formattedTime, serieList } = useTooltip();
+  const visibleSeries = serieList.slice(0, visibilityLimit);
+  const afterLimit = serieList.slice(visibilityLimit);
 
   return (
     <div className="ub-tooltip ub-tooltip-multiple-metrics-attributes">
       <Header>
         <DateTime>{formattedTime}</DateTime>
-        <div className="ub-tooltip-header-right">
-          <span className="ub-tooltip-unit-category">{unitCategory}</span>
-        </div>
       </Header>
       <Divider />
       <div>
@@ -202,10 +182,6 @@ function MultipleAttributesMultipleMetricsTooltip({
       </div>
     </div>
   );
-}
-
-function UnitCategory(props: PropsWithChildren) {
-  return <span className="ub-tooltip-unit-category">{props.children}</span>;
 }
 
 function Summary({ series }: { series: Array<TooltipSerie> }) {
@@ -250,7 +226,16 @@ function Serie(props: PropsWithChildren & { serie: TooltipSerie }) {
 }
 
 function Content(props: PropsWithChildren) {
-  return <div className="ub-tooltip-content">{props.children}</div>;
+  const { maxAttributeKeySetCount } = useTooltip();
+
+  return (
+    <div
+      className="ub-tooltip-content"
+      style={{ "--attr-count": maxAttributeKeySetCount } as React.CSSProperties}
+    >
+      {props.children}
+    </div>
+  );
 }
 
 function Header(props: PropsWithChildren) {
@@ -274,63 +259,58 @@ function Metric() {
 }
 
 function Value() {
-  const serie = useTooltipSerie();
-  return serie.formattedValue ? (
-    <span className="ub-tooltip-serie-value ub-truncate">
-      {serie.formattedValue}
-    </span>
+  const { formattedValue } = useTooltipSerie();
+  return formattedValue ? (
+    <span className="ub-tooltip-serie-value ub-truncate">{formattedValue}</span>
   ) : (
     <span className="ub-tooltip-serie-value-empty">–</span>
   );
 }
 
 function Color() {
-  const serie = useTooltipSerie();
+  const { color: backgroundColor } = useTooltipSerie();
   return (
-    <span
-      style={{ backgroundColor: serie.color }}
-      className="ub-tooltip-serie-color"
-    />
+    <span style={{ backgroundColor }} className="ub-tooltip-serie-color" />
   );
 }
 
 function Attributes() {
+  const { maxAttributeKeySetCount } = useTooltip();
   const { attributes } = useTooltipSerie();
   if (!attributes) return null;
+
   const attributeValues = Object.values(attributes);
+  const fillCount = maxAttributeKeySetCount - attributeValues.length;
 
   return (
     <div className="ub-tooltip-serie-attributes ub-truncate">
       {attributeValues.map((attributeValue, index) => (
         <Fragment key={"tooltip-" + attributeValue}>
-          <span className="ub-tooltip-serie-attribute-value">
+          <span className="ub-tooltip-serie-attribute-value ub-truncate">
             {attributeValue}
           </span>
-          {index < attributeValues.length - 1 && (
-            <span
-              data-text=", "
-              className="ub-tooltip-serie-attribute-divider"
-            />
-          )}
         </Fragment>
+      ))}
+      {Array.from({ length: fillCount }).map((_, i) => (
+        <span key={"fill-" + i} />
       ))}
     </div>
   );
 }
 
 export function sortSeriesByValue({
-  tooltipSerieList,
+  serieList,
   invertSort,
 }: {
-  tooltipSerieList: Array<TooltipSerie>;
+  serieList: Array<TooltipSerie>;
   invertSort?: boolean;
 }): Array<TooltipSerie> {
   if (invertSort) {
-    return tooltipSerieList.sort(
+    return serieList.sort(
       (a, b) => (Number(a.value) || 0) - (Number(b.value) || 0),
     );
   } else {
-    return tooltipSerieList.sort(
+    return serieList.sort(
       (a, b) => (Number(b.value) || 0) - (Number(a.value) || 0),
     );
   }
@@ -338,17 +318,18 @@ export function sortSeriesByValue({
 
 export function Tooltip({
   timestamp,
-  tooltipSerieList: unsortedTooltipSerieList,
+  serieList: unsortedserieList,
   timeZone,
   spansMultipleDays,
   hasMultipleMetrics,
   hasAttributes,
+  maxAttributeKeySetCount,
   invertSort,
   visibilityLimit,
   disableSuggestedLabel,
 }: TooltipExtendedProps) {
-  const tooltipSerieList = sortSeriesByValue({
-    tooltipSerieList: unsortedTooltipSerieList,
+  const serieList = sortSeriesByValue({
+    serieList: unsortedserieList,
     invertSort,
   });
   const formattedTime = spansMultipleDays
@@ -370,8 +351,10 @@ export function Tooltip({
           disableSuggestedLabel,
         }}
         formattedTime={formattedTime}
+        serieList={serieList}
+        maxAttributeKeySetCount={maxAttributeKeySetCount}
       >
-        <MetricsTooltip unitCategory={""} tooltipSerieList={tooltipSerieList} />
+        <MetricsTooltip />
       </TooltipProvider>
     );
   }
@@ -385,8 +368,10 @@ export function Tooltip({
           disableSuggestedLabel,
         }}
         formattedTime={formattedTime}
+        serieList={serieList}
+        maxAttributeKeySetCount={maxAttributeKeySetCount}
       >
-        <MultipleAttributesTooltip tooltipSerieList={tooltipSerieList} />
+        <MultipleAttributesTooltip />
       </TooltipProvider>
     );
   }
@@ -399,11 +384,10 @@ export function Tooltip({
         disableSuggestedLabel,
       }}
       formattedTime={formattedTime}
+      serieList={serieList}
+      maxAttributeKeySetCount={maxAttributeKeySetCount}
     >
-      <MultipleAttributesMultipleMetricsTooltip
-        unitCategory={""}
-        tooltipSerieList={tooltipSerieList}
-      />
+      <MultipleAttributesMultipleMetricsTooltip />
     </TooltipProvider>
   );
 }

@@ -68,7 +68,7 @@ export const MultipleAttributes: Story = {
       max: 40,
       attributeSets: [
         { host: "server-1", region: "us-east-1" },
-        { host: "server-2", region: "us-west-2" },
+        { host: "server-243", region: "us-west-2" },
         { host: "server-3", region: "eu-west-1" },
       ],
     }),
