@@ -13,9 +13,21 @@ import {
 const meta: Meta<typeof Chart> = {
   title: "Components/Chart",
   component: Chart,
-  parameters: {
-    layout: "centered",
-  },
+  decorators: [
+    (Story) => (
+      <div
+        style={{
+          height: "300px",
+          width: "600px",
+          padding: "2rem 1rem 2rem 1rem",
+          border: "3px solid #EAEAEA77",
+          borderRadius: "1rem",
+        }}
+      >
+        <Story />
+      </div>
+    ),
+  ],
 };
 
 export default meta;
@@ -150,61 +162,9 @@ export const MultipleMetrics: Story = {
   },
 };
 
-export const Stacking: Story = {
-  args: {
-    type: "line",
-    times: timePresets.lastHourByMinute(),
-    unit: "percent",
-    series: [
-      generateSeries({
-        metric: "server.error",
-        length: 60,
-        pattern: "spike",
-        min: 20,
-        max: 35,
-        queryIndex: 0,
-      }),
-      generateSeries({
-        metric: "server.info",
-        length: 60,
-        pattern: "random",
-        min: 20,
-        max: 30,
-        queryIndex: 0,
-      }),
-      generateSeries({
-        metric: "server.warning",
-        length: 60,
-        pattern: "random",
-        min: 20,
-        max: 30,
-        queryIndex: 0,
-      }),
-    ],
-    metadata: generateMetadataDict([
-      {
-        name: "server.error",
-        description: "Error rate per minute",
-        suggestedLabel: "Error",
-      },
-      {
-        name: "server.warning",
-        description: "Warning rate per minute",
-        suggestedLabel: "Warning",
-      },
-      {
-        name: "server.info",
-        description: "Info rate per minute",
-        suggestedLabel: "Info",
-      },
-    ]),
-  },
-};
-
 export const AreaStacking: Story = {
   args: {
     type: "area",
-    relativeTimeAxis: true,
     times: timePresets.lastHourByMinute(),
     series: [
       generateSeries({
@@ -331,6 +291,31 @@ export const SpikeScale: Story = {
   },
 };
 
+export const AbnormalPercentage: Story = {
+  args: {
+    type: "bar",
+    times: timePresets.lastHourByMinute(),
+    series: [
+      generateSeries({
+        metric: "container.cpu.usage",
+        length: 60,
+        pattern: "spike",
+        min: 0,
+        max: 130,
+        queryIndex: 0,
+      }),
+    ],
+    metadata: generateMetadataDict([
+      {
+        name: "container.cpu.usage",
+        description: "CPU Usage",
+        suggestedLabel: "Usage",
+        unitCode: "percent",
+      },
+    ]),
+  },
+};
+
 export const MonthUsage: Story = {
   args: {
     type: "bar",
@@ -426,7 +411,44 @@ export const NetworkUsage: Story = {
           name: "container.network.io",
           suggestedLabel: "IO",
           description: "Number of requests per second",
-          unitCode: "by",
+          unitCode: "bytes",
+          type: "gauge",
+        },
+      ],
+    });
+
+    return {
+      type: "line" as const,
+      ...data,
+    };
+  })(),
+};
+
+export const TimeValueScale: Story = {
+  args: (() => {
+    const data = generateChartData({
+      timeOptions: {
+        duration: 24,
+        durationUnit: "hour",
+        interval: 1,
+        intervalUnit: "hour",
+      },
+      seriesConfigs: [
+        {
+          metric: "container.network.latency",
+          pattern: "spike",
+          min: 100,
+          max: 10000,
+          baseValue: 500,
+          amplitude: 100000,
+        },
+      ],
+      metadataConfigs: [
+        {
+          name: "container.network.latency",
+          suggestedLabel: "Latency",
+          description: "Number of requests per second",
+          unitCode: "ms",
           type: "gauge",
         },
       ],
@@ -512,7 +534,7 @@ export const LineThresholds: Story = {
           name: "container.filesystem.usage",
           suggestedLabel: "Usage",
           description: "Filesystem space usage",
-          unitCode: "by",
+          unitCode: "bytes",
           type: "gauge",
         },
       ],
@@ -700,7 +722,7 @@ export const CustomTimeRange: Story = {
         name: "revenue",
         description: "Weekly revenue",
         suggestedLabel: "Revenue",
-        unitCode: "$",
+        unitCode: "currencyUSD",
         type: "gauge",
       },
     ]),
@@ -733,7 +755,7 @@ export const RelativeTime: Story = {
         name: "revenue",
         description: "Weekly revenue",
         suggestedLabel: "Revenue",
-        unitCode: "$",
+        unitCode: "currencyUSD",
         type: "gauge",
       },
     ]),

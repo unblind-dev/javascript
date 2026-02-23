@@ -9,6 +9,7 @@ import {
   MetricType,
   Serie,
 } from "@/types";
+import { Chart, ChartProps } from "..";
 
 // Time utilities
 type TimeUnit = "minute" | "hour" | "day" | "week" | "month";
@@ -137,6 +138,7 @@ interface SeriesGenerationOptions {
   isEmpty?: boolean;
   baseValue?: number;
   amplitude?: number;
+  rounded?: boolean;
 }
 
 /**
@@ -149,6 +151,7 @@ function generateValues(
   max: number = 100,
   baseValue: number = 50,
   amplitude: number = 30,
+  rounded?: boolean,
 ): Array<number> {
   const values: Array<number> = [];
 
@@ -185,7 +188,11 @@ function generateValues(
         value = min + Math.random() * (max - min);
     }
 
-    values.push(Math.round(value * 100) / 100); // Round to 2 decimal places
+    values.push(
+      rounded
+        ? Math.round(Math.round(value * 100) / 100)
+        : Math.round(value * 100) / 100,
+    );
   }
 
   return values;
@@ -216,6 +223,7 @@ export function generateSeries(options: SeriesGenerationOptions): Serie {
     isEmpty = false,
     baseValue = 50,
     amplitude = 30,
+    rounded = false,
   } = options;
 
   return {
@@ -223,7 +231,15 @@ export function generateSeries(options: SeriesGenerationOptions): Serie {
     attributes,
     values: isEmpty
       ? []
-      : generateValues(length, pattern, min, max, baseValue, amplitude),
+      : generateValues(
+          length,
+          pattern,
+          min,
+          max,
+          baseValue,
+          amplitude,
+          rounded,
+        ),
     queryIndex,
     isEmpty,
   };
@@ -433,3 +449,54 @@ export function generateChartData(options: {
     metadata,
   };
 }
+
+export const ChartCard = ({
+  title,
+  badge,
+  height = 200,
+  ...chartProps
+}: {
+  title: string;
+  badge?: string;
+  height?: number;
+  width?: number;
+} & ChartProps) => (
+  <div
+    style={{
+      height,
+      border: "3px solid #eaeaea77",
+      padding: "1rem 1rem 1rem 0.25rem",
+      borderRadius: "10px",
+      overflow: "hidden",
+      display: "flex",
+      flexDirection: "column",
+    }}
+  >
+    <div
+      style={{
+        display: "flex",
+        alignItems: "center",
+        marginLeft: "1rem",
+        marginBottom: "1rem",
+      }}
+    >
+      <p style={{ fontSize: "14px", margin: 0 }}>{title}</p>
+      {badge && (
+        <span
+          style={{
+            fontSize: "10px",
+            padding: "1px 6px",
+            borderRadius: "4px",
+            background: "#eaeaea33",
+            border: "1px solid #eaeaea55",
+            color: "#888",
+            marginLeft: "0.25rem",
+          }}
+        >
+          {badge}
+        </span>
+      )}
+    </div>
+    <Chart {...chartProps} />
+  </div>
+);
