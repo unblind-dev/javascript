@@ -20,13 +20,8 @@ const preview: Preview = {
       <UnblindProvider>
         <div
           style={{
-            height: "300px",
-            width: "1200px",
             maxWidth: "100%",
             // backgroundColor: "#F7F7F5",
-            padding: "2rem 1rem 2rem 1rem",
-            border: "1px solid #EAEAEA44",
-            borderRadius: "1rem",
             display: "grid",
             placeItems: "center",
           }}
