@@ -15,9 +15,7 @@ import {
   ValueFormatter,
 } from "./valueFormats";
 
-interface IntervalsInSeconds {
-  [interval: string]: number;
-}
+type IntervalsInSeconds = Record<Interval, number>;
 
 export enum Interval {
   Year = "year",
@@ -41,7 +39,7 @@ const UNITS = [
   Interval.Millisecond,
 ];
 
-const INTERVALS_IN_SECONDS: IntervalsInSeconds = {
+export const INTERVALS_IN_SECONDS: IntervalsInSeconds = {
   [Interval.Year]: 31536000,
   [Interval.Month]: 2592000,
   [Interval.Week]: 604800,
@@ -50,6 +48,17 @@ const INTERVALS_IN_SECONDS: IntervalsInSeconds = {
   [Interval.Minute]: 60,
   [Interval.Second]: 1,
   [Interval.Millisecond]: 0.001,
+};
+
+export const TIME_UNIT_ID_TO_SECONDS: Record<string, number> = {
+  ns: 1e-9,
+  µs: 1e-6,
+  ms: INTERVALS_IN_SECONDS[Interval.Millisecond],
+  s: INTERVALS_IN_SECONDS[Interval.Second],
+  m: INTERVALS_IN_SECONDS[Interval.Minute],
+  h: INTERVALS_IN_SECONDS[Interval.Hour],
+  d: INTERVALS_IN_SECONDS[Interval.Day],
+  w: INTERVALS_IN_SECONDS[Interval.Week],
 };
 
 export function toNanoSeconds(
@@ -242,7 +251,7 @@ export function toDuration(
 
   // convert $size to milliseconds
   // intervals_in_seconds uses seconds (duh), convert them to milliseconds here to minimize floating point errors
-  size *= (INTERVALS_IN_SECONDS[timeScale] as unknown as number) * 1000;
+  size *= INTERVALS_IN_SECONDS[timeScale] * 1000;
 
   const strings = [];
 
@@ -256,7 +265,7 @@ export function toDuration(
 
   for (let i = 0; i < UNITS.length && decimalsCount >= 0; i++) {
     const interval =
-      (INTERVALS_IN_SECONDS[UNITS[i] as unknown as string] as number) * 1000;
+      (INTERVALS_IN_SECONDS[UNITS[i] as unknown as Interval] as number) * 1000;
     const value = size / interval;
     if (value >= 1 || decrementDecimals) {
       decrementDecimals = true;
