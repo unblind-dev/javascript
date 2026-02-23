@@ -29,7 +29,6 @@ const timeIncrs = {
 function formatTime(
   splits: number[],
   foundIncr: number,
-  range: number,
   timeZone?: string,
 ): string[] {
   // Handle Month/Year increments
@@ -159,100 +158,6 @@ function generateRelativeXAxisSplits(
 }
 
 /**
- * X-Axis: Generate splits (tick positions) for the time axis
- */
-// function generateXAxisSplits(
-//   u: uPlot,
-//   min: number,
-//   max: number,
-//   timeZone?: string,
-// ): number[] {
-//   const range = max - min;
-//   const px = u.width;
-//   const approxTicks = Math.floor(px / 100);
-//   const targetSeconds = range / approxTicks;
-//   const { increment, multiplier } = findBestIncrement(targetSeconds);
-//   const step = increment / 1000;
-//   const splits: number[] = [];
-
-//   // For very short ranges (< 12 hours)
-//   if (range < 12 * 3600) {
-//     let t = Math.ceil(min / step) * step;
-//     for (; t <= max; t += step) splits.push(t);
-//     return splits;
-//   }
-
-//   // For 12h-3days ranges
-//   if (range < 3 * 86400) {
-//     // For 6h+ increments, align to nice hour boundaries
-//     if (increment >= 6 * 3600 * 1000) {
-//       const hourStep = increment / 1000 / 3600; // e.g., 6, 12, etc.
-//       const startDate = new Date(min * 1000);
-
-//       if (timeZone === "UTC") {
-//         const currentHour = startDate.getUTCHours();
-//         const alignedHour = Math.floor(currentHour / hourStep) * hourStep;
-//         startDate.setUTCHours(alignedHour, 0, 0, 0);
-//       } else {
-//         const currentHour = startDate.getHours();
-//         const alignedHour = Math.floor(currentHour / hourStep) * hourStep;
-//         startDate.setHours(alignedHour, 0, 0, 0);
-//       }
-
-//       let t = startDate.getTime() / 1000;
-//       if (t < min) {
-//         t += step;
-//       }
-
-//       while (t <= max) {
-//         splits.push(t);
-//         t += step;
-//       }
-//       return splits;
-//     }
-
-//     // For smaller increments in 12h-3day ranges
-//     let t = Math.ceil(min / step) * step;
-//     for (; t <= max; t += step) splits.push(t);
-//     return splits;
-//   }
-
-//   // For ranges >= 3 days, align to midnight
-//   if (increment >= timeUnitSize.day) {
-//     const currentDate = new Date(min * 1000);
-
-//     if (timeZone === "UTC") {
-//       currentDate.setUTCHours(0, 0, 0, 0);
-//       if (currentDate.getTime() / 1000 < min) {
-//         currentDate.setUTCDate(currentDate.getUTCDate() + multiplier);
-//       }
-//     } else {
-//       currentDate.setHours(0, 0, 0, 0);
-//       if (currentDate.getTime() / 1000 < min) {
-//         currentDate.setDate(currentDate.getDate() + multiplier);
-//       }
-//     }
-
-//     let t = currentDate.getTime() / 1000;
-//     while (t <= max) {
-//       splits.push(t);
-//       if (timeZone === "UTC") {
-//         currentDate.setUTCDate(currentDate.getUTCDate() + multiplier);
-//       } else {
-//         currentDate.setDate(currentDate.getDate() + multiplier);
-//       }
-//       t = currentDate.getTime() / 1000;
-//     }
-//     return splits;
-//   }
-
-//   // Default: simple rounding
-//   let t = Math.ceil(min / step) * step;
-//   for (; t <= max; t += step) splits.push(t);
-//   return splits;
-// }
-
-/**
  * X-Axis: Format splits for relative time axis (only show labels at first and last)
  */
 function generateRelativeXAxisValues(
@@ -276,14 +181,14 @@ function generateXAxisValues(
   timeZone?: string,
 ): string[] {
   const scale = u.scales.x;
-  const range = ((scale?.max ?? 0) - (scale?.min ?? 0)) * 1000; // Convert to ms
+  const range = (scale?.max ?? 0) - (scale?.min ?? 0);
   const approxTicks = Math.floor(u.width / 100);
-  const targetSeconds = range / 1000 / approxTicks;
+  const targetSeconds = range / approxTicks;
   const { increment } = findBestIncrement(targetSeconds);
 
   // Convert splits from seconds to milliseconds for formatTime
   const splitsInMs = splits.map((s) => s * 1000);
-  return formatTime(splitsInMs, increment, range, timeZone);
+  return formatTime(splitsInMs, increment, timeZone);
 }
 
 /**

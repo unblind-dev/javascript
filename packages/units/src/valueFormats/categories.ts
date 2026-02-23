@@ -725,6 +725,14 @@ export const getCategories = (): ValueFormatCategory[] => [
       },
       {
         name: t(
+          "grafana-data.valueFormats.categories.data.formats.name-bytes-iec",
+          "bytes(IEC)",
+        ),
+        id: "By",
+        fn: binaryPrefix("B"),
+      },
+      {
+        name: t(
           "grafana-data.valueFormats.categories.data.formats.name-bytes-si",
           "bytes(SI)",
         ),

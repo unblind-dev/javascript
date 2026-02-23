@@ -471,9 +471,7 @@ const createChartSeries = (
 const parseUnit = (unit?: string) => {
   if (typeof unit === "string") {
     const sUnit = String(unit).toLowerCase().trim();
-    if (sUnit === "by") {
-      return "bytes";
-    } else if (sUnit.startsWith("{") && sUnit.endsWith("}")) {
+    if (sUnit.startsWith("{") && sUnit.endsWith("}")) {
       // This is not always the case but is preferable over rendering {unit}
       // e.g. {cpu} or {cores}
       return "short";
@@ -518,7 +516,7 @@ export const createChartOptions = (
   const formatter = getValueFormat(formatUnit === "1" ? null : formatUnit);
   const formattingFunction = (v: number) => {
     const f = formatter(v);
-    return f.text + (f.suffix?.trim() || "");
+    return (f.prefix?.trim() || "") + f.text + (f.suffix?.trim() || "");
   };
 
   const opts: uPlot.Options = {
@@ -571,7 +569,7 @@ export const createChartOptions = (
       | undefined,
     axes: [
       createXAxisConfig(fontFamily, timeZone, relativeTimeAxis, hideAxis),
-      createYAxisConfig(formatter, fontFamily, hideAxis),
+      createYAxisConfig(formatter, fontFamily, hideAxis, unit),
     ],
     legend: {
       show: false,

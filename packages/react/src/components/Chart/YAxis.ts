@@ -1,12 +1,13 @@
 import uPlot from "uplot";
 import { getChartFont } from "./utils";
 import { StackedData } from "@/types";
+import { getSplitsBuilder } from "./splits";
 
+/**
+ * As with other parts of a chart, we want to have nice looking space for each step.
+ */
 export const calculateNiceStep = (maxMin: number, maxTicks: number = 4) => {
-  // Determine step size based on min/max value (targeting ~4-5 ticks)
   const roughStep = maxMin / maxTicks;
-
-  // Round to "nice" numbers (1, 2, 5) at any magnitude
   const magnitude = Math.pow(10, Math.floor(Math.log10(roughStep)));
   const residual = roughStep / magnitude;
 
@@ -25,6 +26,12 @@ export const calculateNiceStep = (maxMin: number, maxTicks: number = 4) => {
   return niceVal;
 };
 
+/**
+ * Just a util function to avoid repeating the same code.
+ * @param predefinedNumber
+ * @param defaultNumber
+ * @returns `predefinedNumber` if declared, otherwise `defaultNumber`
+ */
 const usePredefinedIfExists = (
   predefinedNumber: number | undefined,
   defaultNumber: number,
@@ -34,83 +41,64 @@ const usePredefinedIfExists = (
     : defaultNumber;
 };
 
+const PADDING_FACTOR = 0.5;
+
+function niceMax(value: number): number {
+  return calculateNiceStep(value * (1 + PADDING_FACTOR));
+}
+
+function niceMin(value: number): number {
+  return value < 0
+    ? -calculateNiceStep(Math.abs(value) * (1 + PADDING_FACTOR))
+    : 0;
+}
+
+/**
+ * Custom scale range for predefined units:
+ *  1. Percent/Percent Unit: [0, 100]
+ *  2. Small ones: [0, 1]
+ *  3. Normal for the rest
+ */
 export const buildScaleRange: (
   unit: string | undefined,
-  predefinedMin?: number | undefined,
-  predefinedMax?: number | undefined,
-) => uPlot.Scale.Range = (
-  unit: string | undefined,
-  predefinedMin?: number | undefined,
-  predefinedMax?: number | undefined,
-) => {
+  predefinedMin?: number,
+  predefinedMax?: number,
+) => uPlot.Scale.Range = (unit, predefinedMin, predefinedMax) => {
   return (_: uPlot, dataMin: number, dataMax: number) => {
     if (dataMin === 0 && dataMax === 0) {
       return [
         usePredefinedIfExists(predefinedMin, 0),
-        usePredefinedIfExists(predefinedMax, 100),
-      ];
-    }
-    // Add a bit of padding at the top
-    const padding = 1;
-    const max = dataMax * (1 + padding);
-    const min = dataMin < 0 ? dataMin * (1 + padding) : dataMin * (1 - padding);
-
-    if (unit === "percent" || unit === "percentunit") {
-      // Percentunit ranges from 0 to 1
-      const percentMax = unit === "percent" ? 100 : 1;
-      if (dataMax > percentMax) {
-        if (dataMin < 0) {
-          return [
-            usePredefinedIfExists(predefinedMin, min),
-            usePredefinedIfExists(predefinedMax, max),
-          ];
-        }
-        return [
-          usePredefinedIfExists(predefinedMin, 0),
-          usePredefinedIfExists(predefinedMax, max),
-        ];
-      } else if (dataMin < 0) {
-        return [
-          usePredefinedIfExists(predefinedMin, min),
-          usePredefinedIfExists(predefinedMax, percentMax),
-        ];
-      }
-
-      // Normal case
-      return [
-        usePredefinedIfExists(predefinedMin, 0),
-        usePredefinedIfExists(predefinedMax, percentMax),
+        usePredefinedIfExists(predefinedMax, unit === "percentunit" ? 1 : 100),
       ];
     }
 
-    // For edge case where max is 0 or very close to 0
-    if (dataMax <= 0.9999) {
-      if (dataMin <= 0) {
-        return [
-          usePredefinedIfExists(predefinedMin, min),
-          usePredefinedIfExists(predefinedMax, 1),
-        ];
-      }
+    if (dataMax > 0 && dataMax <= 0.9999) {
       return [
-        usePredefinedIfExists(predefinedMin, 0),
+        usePredefinedIfExists(
+          predefinedMin,
+          dataMin < 0 ? niceMin(dataMin) : 0,
+        ),
         usePredefinedIfExists(predefinedMax, 1),
       ];
     }
 
-    const niceMax = calculateNiceStep(max);
-    const niceMin = calculateNiceStep(Math.abs(min));
+    const computedMax = niceMax(dataMax);
+    const computedMin = niceMin(dataMin);
 
-    // Important to not do <= 0, otherwise will break some edge cases where dataMin = 0
-    if (dataMin < 0) {
+    if (unit === "percent" || unit === "percentunit") {
+      const naturalMax = unit === "percent" ? 100 : 1;
       return [
-        usePredefinedIfExists(predefinedMax, -niceMin),
-        usePredefinedIfExists(predefinedMax, niceMax),
+        usePredefinedIfExists(predefinedMin, computedMin),
+        usePredefinedIfExists(
+          predefinedMax,
+          dataMax > naturalMax ? computedMax : naturalMax,
+        ),
       ];
     }
 
     return [
-      usePredefinedIfExists(predefinedMin, 0),
-      usePredefinedIfExists(predefinedMax, niceMax),
+      usePredefinedIfExists(predefinedMin, computedMin),
+      usePredefinedIfExists(predefinedMax, computedMax),
     ];
   };
 };
@@ -157,6 +145,7 @@ export function createYAxisConfig(
   ) => { text: string; suffix?: string },
   fontFamiliy: string,
   hideAxis?: boolean,
+  unit?: string,
 ): uPlot.Axis {
   return {
     gap: 0,
@@ -175,7 +164,7 @@ export function createYAxisConfig(
         return formmatedVal.text + (formmatedVal.suffix?.trim() || "");
       }),
     size: calculateYAxisSize,
-    space: (self, _axisIdx, _scaleMin, _scaleMax, _plotDim) => {
+    space: (self) => {
       const height = self.height;
       if (height <= 100) {
         return 30; // At least 2 ticks, better if 3
@@ -191,6 +180,7 @@ export function createYAxisConfig(
         return 70; // At least 4 ticks
       }
     },
+    splits: getSplitsBuilder(unit),
     show: !hideAxis,
   };
 }

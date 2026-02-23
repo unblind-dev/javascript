@@ -83,7 +83,7 @@ export function fullCurrency(
   };
 }
 
-const SI_PREFIXES = [
+export const SI_PREFIXES = [
   "f",
   "p",
   "n",
@@ -99,7 +99,7 @@ const SI_PREFIXES = [
   "Z",
   "Y",
 ];
-const SI_BASE_INDEX = SI_PREFIXES.indexOf("");
+export const SI_BASE_INDEX = SI_PREFIXES.indexOf("");
 
 export function getOffsetFromSIPrefix(c: string): number {
   const charIndex = SI_PREFIXES.findIndex(
@@ -108,7 +108,17 @@ export function getOffsetFromSIPrefix(c: string): number {
   return charIndex < 0 ? 0 : charIndex - SI_BASE_INDEX;
 }
 
-const BIN_PREFIXES = ["", "Ki", "Mi", "Gi", "Ti", "Pi", "Ei", "Zi", "Yi"];
+export const BIN_PREFIXES = [
+  "",
+  "Ki",
+  "Mi",
+  "Gi",
+  "Ti",
+  "Pi",
+  "Ei",
+  "Zi",
+  "Yi",
+];
 
 export function binaryPrefix(unit: string, offset = 0): ValueFormatter {
   const units = BIN_PREFIXES.map((p) => " " + p + unit);

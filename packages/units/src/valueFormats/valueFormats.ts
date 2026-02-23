@@ -47,8 +47,10 @@ export interface ValueFormatterIndex {
 
 // Globals & formats cache
 let categories: ValueFormatCategory[] = [];
+// Unit category index for a faster category recognition
+const unitCategoryIndex: Record<string, string> = {};
 const index: ValueFormatterIndex = {};
-let hasBuiltIndex = false;
+export let hasBuiltIndex = false;
 
 export function toFixed(value: number, decimals?: DecimalCount): string {
   if (value === null) {
@@ -232,12 +234,13 @@ export function stringFormater(value: number): FormattedValue {
   return { text: `${value}` };
 }
 
-function buildFormats() {
+export function buildFormats() {
   categories = getCategories();
 
   for (const cat of categories) {
     for (const format of cat.formats) {
       index[format.id] = format.fn;
+      unitCategoryIndex[format.id] = cat.name;
     }
   }
 
@@ -352,4 +355,19 @@ export function getValueFormats() {
       }),
     };
   });
+}
+
+/**
+ * Unblind function to get a unit's category
+ */
+export function getCategoryForUnit(id?: string): string | undefined {
+  if (!hasBuiltIndex) {
+    buildFormats();
+  }
+
+  if (!id) {
+    return undefined;
+  }
+
+  return unitCategoryIndex[id];
 }
