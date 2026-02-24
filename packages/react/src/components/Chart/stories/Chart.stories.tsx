@@ -316,41 +316,6 @@ export const AbnormalPercentage: Story = {
   },
 };
 
-export const Gradients: Story = {
-  args: {
-    type: "spline",
-    fill: true,
-    times: timePresets.last24Hours(),
-    colors: {
-      fill: [["#840032", "#a8a8a8", "#FFFFFF"]],
-      border: ["#840032"],
-    },
-    series: [
-      generateSeries({
-        metric: "memory.usage",
-        length: timePresets.last24Hours().length,
-        pattern: "random",
-        min: 40,
-        max: 45,
-        amplitude: 5,
-        queryIndex: 1,
-        attributes: {
-          "service.name": "purchases-service",
-          region: "us-east-2",
-        },
-      }),
-    ],
-    metadata: generateMetadataDict([
-      {
-        name: "memory.usage",
-        suggestedLabel: "Memory",
-        ...unitPresets.percent,
-        type: "gauge",
-      },
-    ]),
-  },
-};
-
 export const MonthUsage: Story = {
   args: {
     type: "bar",
