@@ -76,15 +76,17 @@ export const compareAndResolveUnit = (
 };
 
 // Type guards for colors
-export function isColorsObject(
-  colors: Colors,
-): colors is { fill: string[]; border: string[] } {
+export function isColorsObject(colors: Colors): colors is {
+  fill: Array<string | Array<string>>;
+  border: Array<string>;
+} {
   return (
     typeof colors === "object" &&
     colors !== null &&
     !Array.isArray(colors) &&
     Array.isArray(
-      (colors as { fill: Array<string>; border: Array<string> }).fill,
+      (colors as { fill: Array<string | Array<string>>; border: Array<string> })
+        .fill,
     ) &&
     Array.isArray(colors.border)
   );
@@ -131,21 +133,47 @@ const getFillingColor = ({
 export const getColor = (
   serie: Serie,
   index: number,
-  colors: Colors | undefined,
+  userColors: Colors | undefined,
   type: ChartType,
   computedStyle: CSSStyleDeclaration,
   isFilling?: boolean,
 ) => {
   const useSolid = type === "bar" || type === "area";
 
-  if (colors) {
+  if (userColors) {
     // User provided
-    if (isColorsArray(colors)) {
-      return colors[index];
-    } else if (isColorsObject(colors)) {
-      return isFilling ? colors.fill[index] : colors.border[index];
+    if (isColorsArray(userColors)) {
+      return userColors[index];
+    } else if (isColorsObject(userColors)) {
+      if (isFilling) {
+        const fillColor = userColors.fill[index];
+        if (Array.isArray(fillColor)) {
+          // Apply gradient fn
+          return (u: uPlot) => {
+            const { ctx, bbox } = u;
+            const g = ctx.createLinearGradient(
+              0,
+              bbox.top,
+              0,
+              bbox.top + bbox.height,
+            );
+
+            fillColor.forEach((colorStop, i) => {
+              const offset =
+                fillColor.length > 1 ? i / (fillColor.length - 1) : 0;
+              g.addColorStop(offset, colorStop);
+            });
+
+            return g;
+          };
+        } else {
+          return userColors.fill[index];
+        }
+      } else {
+        return userColors.border[index];
+      }
     } else {
-      return colors(serie, index, type, isFilling);
+      return userColors(serie, index, type, isFilling);
     }
   }
 

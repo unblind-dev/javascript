@@ -105,7 +105,7 @@ export type Severity = "TRACE" | "DEBUG" | "INFO" | "WARN" | "ERROR" | "FATAL";
 
 export type Colors =
   | Array<string>
-  | { fill: Array<string>; border: Array<string> }
+  | { fill: Array<string | Array<string>>; border: Array<string> }
   | ((
       serie: Serie,
       index: number,
