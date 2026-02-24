@@ -20,7 +20,15 @@ const last7d = timePresets.last7Days();
 const last30d = timePresets.last30Days();
 
 export const Dashboard = () => (
-  <div style={{ padding: "24px", minHeight: "100vh", width: "1800px" }}>
+  <div
+    style={{
+      padding: "24px",
+      minHeight: "100vh",
+      width: "100%",
+      display: "grid",
+      maxWidth: "1800px",
+    }}
+  >
     <h1
       style={{
         fontSize: "16px",

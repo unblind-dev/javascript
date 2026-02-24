@@ -19,7 +19,15 @@ const last7d = timePresets.last7Days();
 const last30d = timePresets.last30Days();
 
 export const DBDashboard = () => (
-  <div style={{ padding: "24px", minHeight: "100vh", width: "1800px" }}>
+  <div
+    style={{
+      padding: "24px",
+      minHeight: "100vh",
+      width: "100%",
+      display: "grid",
+      maxWidth: "1800px",
+    }}
+  >
     <h1
       style={{
         fontSize: "16px",
@@ -164,7 +172,7 @@ const SECTIONS: {
             length: last7d.length,
             pattern: "random",
             min: 80,
-            max: 200,
+            max: 120,
             queryIndex: 0,
             attributes: { instance: "primary" },
             rounded: true,
@@ -174,7 +182,7 @@ const SECTIONS: {
             length: last7d.length,
             pattern: "random",
             min: 40,
-            max: 120,
+            max: 50,
             queryIndex: 1,
             attributes: { instance: "replica-1" },
             rounded: true,
@@ -184,7 +192,7 @@ const SECTIONS: {
             length: last7d.length,
             pattern: "random",
             min: 20,
-            max: 90,
+            max: 30,
             queryIndex: 2,
             attributes: { instance: "replica-2" },
             rounded: true,
@@ -260,8 +268,7 @@ const SECTIONS: {
           generateSeries({
             metric: "db.qps",
             length: 60,
-            pattern: "sine",
-            min: 200,
+            min: 1000,
             max: 3000,
             queryIndex: 0,
           }),

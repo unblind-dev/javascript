@@ -31,7 +31,15 @@ const REGIONS = [
 ];
 
 export const LLMDashboard = () => (
-  <div style={{ padding: "24px", minHeight: "100vh", width: "1800px" }}>
+  <div
+    style={{
+      padding: "24px",
+      minHeight: "100vh",
+      width: "100%",
+      display: "grid",
+      maxWidth: "1800px",
+    }}
+  >
     <h1
       style={{
         fontSize: "16px",
@@ -99,6 +107,7 @@ const SECTIONS: {
             pattern: "random",
             min: 80,
             max: 300,
+            amplitude: 50,
             queryIndex: 0,
             attributes: { percentile: "p50" },
           }),
@@ -108,6 +117,7 @@ const SECTIONS: {
             pattern: "random",
             min: 300,
             max: 900,
+            amplitude: 50,
             queryIndex: 1,
             attributes: { percentile: "p95" },
           }),
@@ -117,6 +127,7 @@ const SECTIONS: {
             pattern: "spike",
             min: 600,
             max: 3000,
+            amplitude: 50,
             queryIndex: 2,
             attributes: { percentile: "p99" },
           }),
@@ -139,8 +150,9 @@ const SECTIONS: {
             metric: "llm.request.latency",
             length: 60,
             pattern: "random",
-            min: 500 + i * 200,
+            min: 3500 + i * 200,
             max: 4000 + i * 500,
+            amplitude: 50,
             queryIndex: i,
             attributes: attrs,
           }),
@@ -163,8 +175,7 @@ const SECTIONS: {
           generateSeries({
             metric: "llm.tokens_per_sec",
             length: 60,
-            pattern: "sine",
-            min: 20 + i * 10 * Math.random(),
+            min: 100 + i * 10 * Math.random(),
             max: 120 + i * 20 * Math.random(),
             amplitude: 10,
             queryIndex: i,
@@ -185,8 +196,9 @@ const SECTIONS: {
             metric: "llm.request.latency",
             length: last24h.length,
             pattern: "random",
-            min: 400 + i * 100,
+            min: 1500 + i * 100,
             max: 2000 + i * 300,
+            amplitude: 50,
             queryIndex: i,
             attributes: attrs,
           }),
@@ -234,7 +246,6 @@ const SECTIONS: {
           generateSeries({
             metric: "llm.tokens.prompt",
             length: 60,
-            pattern: "sine",
             min: 10_000,
             max: 80_000,
             queryIndex: 0,
@@ -243,7 +254,6 @@ const SECTIONS: {
           generateSeries({
             metric: "llm.tokens.completion",
             length: 60,
-            pattern: "sine",
             min: 5_000,
             max: 40_000,
             queryIndex: 1,
@@ -251,7 +261,11 @@ const SECTIONS: {
           }),
         ],
         metadata: generateMetadataDict([
-          { name: "llm.tokens.prompt", suggestedLabel: "Prompt" },
+          {
+            name: "llm.tokens.prompt",
+            suggestedLabel: "Prompt",
+            unitCode: "short",
+          },
           { name: "llm.tokens.completion", suggestedLabel: "Completion" },
         ]),
       },
@@ -273,7 +287,11 @@ const SECTIONS: {
           }),
         ),
         metadata: generateMetadataDict([
-          { name: "llm.requests", suggestedLabel: "Requests" },
+          {
+            name: "llm.requests",
+            suggestedLabel: "Requests",
+            unitCode: "short",
+          },
         ]),
       },
       {
@@ -421,7 +439,7 @@ const SECTIONS: {
             length: last24h.length,
             pattern: "random",
             min: 30,
-            max: 85,
+            max: 55,
             queryIndex: 0,
           }),
         ],
@@ -683,7 +701,6 @@ const SECTIONS: {
           generateSeries({
             metric: "llm.gpu.utilization",
             length: 60,
-            pattern: "sine",
             min: 40 + i * 10,
             max: 95,
             queryIndex: i,
