@@ -1,5 +1,6 @@
 @import "uplot/dist/uPlot.min.css";
 @import "./components/Tooltip/Tooltip.css";
+@import "./components/TimeRange/TimeRange.css";
 @import "./components/Defaults/Defaults.css";
 
 :root {
@@ -12,13 +13,13 @@
     --secondary-foreground,
     oklch(0.208 0.042 264.541)
   );
+  --ub-accent: var(--accent, --ub-primary);
+  --ub-destroy: var(--destroy, oklch(0.577 0.245 27.325));
+  --ub-input: var(--input, oklch(0.922 0 0));
   --ub-muted: var(--muted, oklch(0.967 0.001 286.375));
   --ub-muted-foreground: var(--muted-foreground, oklch(0.552 0.016 285.938));
   --ub-popover: var(--popover, oklch(1 0 0));
-  --ub-border: var(
-    --border,
-    oklch(0.922 0.005 264.542 / 0.8)
-  ); /* gray-200/80 */
+  --ub-border: var(--border, oklch(0.922 0.005 264.542));
   --ub-ring: var(--ring, oklch(0.208 0.042 264.541));
 
   /* Custom extensions */

@@ -89,6 +89,8 @@ export interface DateTime extends Object {
   unix: () => number;
   utc: () => DateTime;
   utcOffset: () => number;
+  date?: () => number;
+  day?: () => number;
   hour?: () => number;
   minute?: () => number;
 }

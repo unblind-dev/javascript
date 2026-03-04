@@ -48,13 +48,13 @@ function formatTime(
         const day = timeZone === "UTC" ? date.getUTCDate() : date.getDate();
 
         if (day === 1) {
-          return date.toLocaleDateString(undefined, {
+          return date.toLocaleDateString("en-US", {
             month: "short",
             year: "numeric",
             timeZone,
           });
         } else {
-          return date.toLocaleDateString(undefined, {
+          return date.toLocaleDateString("en-US", {
             day: "numeric",
             month: "short",
             timeZone,
@@ -72,13 +72,10 @@ function formatTime(
   return splits.map((v) => {
     const date = new Date(v);
 
-    const showSeconds = foundIncr < timeUnitSize.minute;
-    const showMillis = foundIncr < timeUnitSize.second;
-
     // Check for Midnight in the specific TimeZone
-    // We use "en-GB" here strictly to check the "00:00" pattern reliably
+    // We use "en-US" here strictly to check the "00:00" pattern reliably
     // without worrying about AM/PM locale differences in the logic.
-    const checkTimeStr = date.toLocaleTimeString("en-GB", {
+    const checkTimeStr = date.toLocaleTimeString("en-US", {
       hour: "2-digit",
       minute: "2-digit",
       hour12: false,
@@ -86,23 +83,17 @@ function formatTime(
     });
 
     // IF it is midnight (and we aren't zooming into seconds), SHOW DATE
-    if (
-      (checkTimeStr === "00:00" || checkTimeStr === "24:00") &&
-      !showSeconds &&
-      !showMillis
-    ) {
-      return date.toLocaleDateString(undefined, {
+    if (checkTimeStr === "00:00" || checkTimeStr === "24:00") {
+      return date.toLocaleDateString("en-US", {
         day: "2-digit",
         month: "short",
         timeZone,
       });
     }
 
-    return date.toLocaleTimeString(undefined, {
+    return date.toLocaleTimeString("en-US", {
       hour: "2-digit",
       minute: "2-digit",
-      second: showSeconds ? "2-digit" : undefined,
-      fractionalSecondDigits: showMillis ? 3 : undefined,
       hour12: false,
       timeZone,
     });

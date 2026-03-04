@@ -1,3 +1,5 @@
+export { type TimeRangeValue } from "@unblind/units";
+
 // Provider
 export {
   UnblindProvider,
@@ -29,11 +31,12 @@ import "./styles.css";
 
 // Components
 export { Timeseries } from "./components/Timeseries";
+export { Chart } from "./components/Chart";
+export { Loading, Error, Empty } from "./components/Defaults";
+export { TimeRange } from "./components/TimeRange";
 export type { TimeseriesProps } from "./components/Timeseries";
 export type { TooltipProps } from "./components/Tooltip";
-export { Chart } from "./components/Chart";
 export type { ChartProps } from "./components/Chart";
-export { Loading, Error, Empty } from "./components/Defaults";
 
 // Types
 export type {
@@ -44,7 +47,6 @@ export type {
   Serie,
   TimeseriesQuery,
   ChartType,
-  TimeRange,
   Log,
   Severity,
   PaginatedResponse,

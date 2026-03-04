@@ -1,12 +1,23 @@
-import React, { createContext, useContext, useMemo } from "react";
+import React, {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 import type {
   TimeseriesQueryConfig,
-  TimeRange,
   Appearance,
   ChartVisualConfig,
 } from "../types";
 import { TooltipProps } from "../components/Tooltip";
-import { Loading, Error, Empty } from "../components/Defaults";
+import {
+  Loading,
+  Error as DefaultErrorComponent,
+  Empty,
+} from "../components/Defaults";
+import { TimeRangeValue } from "@unblind/units";
 
 export type ScopeConfig = TimeseriesQueryConfig &
   ChartVisualConfig & {
@@ -37,7 +48,17 @@ export type ScopeConfig = TimeseriesQueryConfig &
     appearance?: Appearance;
   };
 
-const ScopeConfigContext = createContext<ScopeConfig | undefined>(undefined);
+type UpdateTimeRangeFunction = (
+  value?: TimeRangeValue,
+  startTime?: number,
+  endTime?: number,
+) => void;
+
+interface ScopeContext extends ScopeConfig {
+  updateTimeRange: UpdateTimeRangeFunction;
+}
+
+const ScopeConfigContext = createContext<ScopeContext | undefined>(undefined);
 
 export type ScopeProps = ScopeConfig & {
   children?: React.ReactNode;
@@ -73,9 +94,9 @@ export type ScopeProps = ScopeConfig & {
  */
 export function Scope({
   children,
-  timeRange,
-  startTime,
-  endTime,
+  timeRange: propsTimeRange,
+  startTime: propsStartTime,
+  endTime: propsEndTime,
   interval,
   attributes,
   groupBy,
@@ -91,6 +112,25 @@ export function Scope({
   disableSuggestedLabel,
 }: ScopeProps) {
   const parentContext = useContext(ScopeConfigContext);
+
+  const [timeRange, setTimeRange] = useState<TimeRangeValue | undefined>(
+    propsTimeRange ?? parentContext?.timeRange,
+  );
+  const [startTime, setStartTime] = useState(
+    propsStartTime ?? parentContext?.startTime,
+  );
+  const [endTime, setEndTime] = useState(
+    propsEndTime ?? parentContext?.endTime,
+  );
+
+  const updateTimeRange = useCallback<UpdateTimeRangeFunction>(
+    (value?: TimeRangeValue, start?: number, end?: number) => {
+      setTimeRange(value);
+      setStartTime(start);
+      setEndTime(end);
+    },
+    [],
+  );
 
   // Components
   const LoadingComponent =
@@ -134,7 +174,7 @@ export function Scope({
     };
   }, [tooltipHide, tooltipVisibilityLimit]);
 
-  const scopeConfigValue: ScopeConfig = useMemo(
+  const scopeContext: ScopeContext = useMemo(
     () => ({
       timeRange: timeRange ?? parentContext?.timeRange,
       startTime: startTime ?? parentContext?.startTime,
@@ -165,6 +205,7 @@ export function Scope({
           : parentContext?.disableSuggestedLabel,
       appearance: memoizedAppearance,
       tooltip: memoizedTooltip,
+      updateTimeRange,
     }),
     [
       timeRange,
@@ -184,22 +225,53 @@ export function Scope({
       parentContext,
       invertSort,
       disableSuggestedLabel,
+      updateTimeRange,
     ],
   );
 
+  useEffect(() => {
+    if (propsTimeRange !== undefined) setTimeRange(propsTimeRange);
+  }, [propsTimeRange]);
+
+  useEffect(() => {
+    if (propsStartTime !== undefined) setStartTime(propsStartTime);
+  }, [propsStartTime]);
+
+  useEffect(() => {
+    if (propsTimeRange !== undefined) setTimeRange(propsTimeRange);
+    if (propsStartTime !== undefined) setStartTime(propsStartTime);
+    if (propsEndTime !== undefined) setEndTime(propsEndTime);
+  }, [propsTimeRange, propsStartTime, propsEndTime]);
+
+  useEffect(() => {
+    if (propsTimeRange === undefined && parentContext?.timeRange !== undefined)
+      setTimeRange(parentContext.timeRange);
+    if (propsStartTime === undefined && parentContext?.startTime !== undefined)
+      setStartTime(parentContext.startTime);
+    if (propsEndTime === undefined && parentContext?.endTime !== undefined)
+      setEndTime(parentContext.endTime);
+  }, [
+    parentContext?.timeRange,
+    parentContext?.startTime,
+    parentContext?.endTime,
+    propsTimeRange,
+    propsStartTime,
+    propsEndTime,
+  ]);
+
   return (
-    <ScopeConfigContext.Provider value={scopeConfigValue}>
+    <ScopeConfigContext.Provider value={scopeContext}>
       {children}
     </ScopeConfigContext.Provider>
   );
 }
 
-const DEFAULT_TIMERANGE = "6h" as const;
+const DEFAULT_TIMERANGE: TimeRangeValue = "Last 6 hours";
 
 export type UseScopeReturn = TimeseriesQueryConfig &
   ChartVisualConfig & {
-    timeRange: TimeRange;
-
+    timeRange: TimeRangeValue;
+    updateTimeRange: UpdateTimeRangeFunction;
     appearance: {
       components: {
         Loading: React.ComponentType;
@@ -226,16 +298,21 @@ export type UseScopeReturn = TimeseriesQueryConfig &
 export function useScope(): UseScopeReturn {
   const ctx = useContext(ScopeConfigContext);
 
+  if (!ctx) {
+    throw new Error("useScope must be used within a ScopeConfigProvider");
+  }
+
   return useMemo(() => {
     return {
       ...ctx,
-      timeRange: ctx?.timeRange || DEFAULT_TIMERANGE,
+      timeRange: ctx.timeRange || DEFAULT_TIMERANGE,
+      updateTimeRange: ctx.updateTimeRange,
       appearance: {
         components: {
-          Loading: ctx?.appearance?.components?.Loading ?? Loading,
-          Error: ctx?.appearance?.components?.Error ?? Error,
-          Empty: ctx?.appearance?.components?.Empty ?? Empty,
-          Tooltip: ctx?.appearance?.components?.Tooltip,
+          Loading: ctx.appearance?.components?.Loading ?? Loading,
+          Error: ctx.appearance?.components?.Error ?? DefaultErrorComponent,
+          Empty: ctx.appearance?.components?.Empty ?? Empty,
+          Tooltip: ctx.appearance?.components?.Tooltip,
         },
       },
     };

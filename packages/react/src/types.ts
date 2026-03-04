@@ -2,8 +2,8 @@
  * Shared types for Unblind React library.
  */
 
-import { StringValue } from "ms";
 import { TooltipProps } from "./components/Tooltip";
+import { TimeRangeValue } from "@unblind/units";
 
 export type MetricType =
   | "gauge"
@@ -29,7 +29,7 @@ export type AggregationOperator =
  */
 export interface MetricMetadata {
   name: string;
-  description: string;
+  description?: string;
   suggestedLabel?: string;
   unit: {
     /// The unique, case-sensitive UCUM identifier (e.g., "mL", "m/s2")
@@ -70,13 +70,6 @@ export interface TimeseriesQuery {
  * Chart types available
  */
 export type ChartType = "bar" | "line" | "area" | "step" | "spline";
-
-/**
- * Time Range definition:
- *
- * e.g. 5secs, 4h, 3 days, and so on.
- */
-export type TimeRange = StringValue;
 
 export interface Log {
   timestamp: number;
@@ -123,7 +116,7 @@ export type TimeConfig = {
    * Optional time range. If not provided, will use timeRange from the provider.
    * Ignored if startTime and endTime are provided.
    */
-  timeRange?: TimeRange;
+  timeRange?: TimeRangeValue;
   /**
    * Optional start time (Unix timestamp in seconds).
    * If provided along with endTime, takes priority over timeRange.

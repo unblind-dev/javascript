@@ -1,12 +1,17 @@
-import { TimeRange } from "@/types";
-import ms from "ms";
+import {
+  dateTime,
+  dateTimeForTimeZone,
+  parseDateMath,
+  parseHumanInput,
+  TimeRangeValue,
+} from "@unblind/units";
 
 export function hasValidTimeConfig({
   timeRange,
   startTime,
   endTime,
 }: {
-  timeRange?: TimeRange;
+  timeRange?: TimeRangeValue;
   startTime?: number;
   endTime?: number;
 }) {
@@ -21,12 +26,12 @@ export function getTimeConfig({
   props,
 }: {
   scope: {
-    timeRange: TimeRange;
+    timeRange: TimeRangeValue;
     startTime?: number;
     endTime?: number;
   };
   props: {
-    timeRange?: TimeRange;
+    timeRange?: TimeRangeValue;
     startTime?: number;
     endTime?: number;
   };
@@ -38,17 +43,34 @@ export function getTimeConfig({
   }
 }
 
-export function timeRangeToCalculatedTimestamp(
-  timeRange: TimeRange,
-): [number, number] {
-  const now = Math.floor(Date.now() / 1000);
-  const calculatedStartTime = now - Math.floor(ms(timeRange) / 1000);
-  const calculatedEndTime = now;
-  return [calculatedStartTime, calculatedEndTime];
+export function timeRangeToTimestamps(
+  value: TimeRangeValue,
+  timezone?: string,
+): [number, number] | null {
+  const raw = parseHumanInput(value);
+  if (!raw) return null;
+
+  const now = dateTimeForTimeZone(timezone);
+
+  const fromMath = raw.from.startsWith("now")
+    ? raw.from.slice("now".length)
+    : "";
+  const toMath = raw.to.startsWith("now") ? raw.to.slice("now".length) : "";
+
+  const from = fromMath
+    ? parseDateMath(fromMath, dateTime(now), false)
+    : dateTime(now);
+  const to = toMath
+    ? parseDateMath(toMath, dateTime(now), true)
+    : dateTime(now);
+
+  if (!from?.isValid() || !to?.isValid()) return null;
+
+  return [Math.floor(from.valueOf() / 1000), Math.floor(to.valueOf() / 1000)];
 }
 
 export function deduceTimestamp(
-  timeRange?: TimeRange,
+  timeRange?: TimeRangeValue,
   startTime?: number,
   endTime?: number,
 ): [number, number] {
@@ -59,9 +81,14 @@ export function deduceTimestamp(
     calculatedStartTime = startTime!;
     calculatedEndTime = endTime!;
   } else if (timeRange) {
-    const [startTime, endTime] = timeRangeToCalculatedTimestamp(timeRange);
-    calculatedStartTime = startTime;
-    calculatedEndTime = endTime;
+    const timestamps = timeRangeToTimestamps(timeRange);
+    if (!timestamps) {
+      throw new Error("Invalid time range.");
+    } else {
+      const [startTime, endTime] = timestamps;
+      calculatedStartTime = startTime;
+      calculatedEndTime = endTime;
+    }
   } else {
     throw new Error(
       "Either timeRange or both startTime and endTime must be provided",

@@ -201,11 +201,62 @@ export function tooltipPlugin(
   let boundingLeft: number;
   let boundingTop: number;
   let isHovering = false;
+  let lastCursorLeft: number | null = null;
+  let lastCursorTop: number | null = null;
+  let activeUplot: uPlot | null = null;
+  let frameId: number | null = null;
+  let onWindowScroll: (() => void) | null = null;
+  let onWindowResize: (() => void) | null = null;
 
-  function syncBounds(): void {
+  function syncBounds(): boolean {
     const bbox = over.getBoundingClientRect();
+    const changed = bbox.left !== boundingLeft || bbox.top !== boundingTop;
     boundingLeft = bbox.left;
     boundingTop = bbox.top;
+    return changed;
+  }
+
+  function positionFromLastCursor() {
+    if (
+      !activeUplot ||
+      !isHovering ||
+      lastCursorLeft == null ||
+      lastCursorTop == null ||
+      tooltipManager.getRenderedUplot() !== activeUplot
+    ) {
+      return;
+    }
+
+    tooltipManager.positionTooltip({
+      left: lastCursorLeft + boundingLeft,
+      top: lastCursorTop + boundingTop,
+    });
+  }
+
+  function startPositionWatcher() {
+    if (frameId != null) return;
+
+    const step = () => {
+      if (!isHovering) {
+        frameId = null;
+        return;
+      }
+
+      if (syncBounds()) {
+        positionFromLastCursor();
+      }
+
+      frameId = window.requestAnimationFrame(step);
+    };
+
+    frameId = window.requestAnimationFrame(step);
+  }
+
+  function stopPositionWatcher() {
+    if (frameId != null) {
+      window.cancelAnimationFrame(frameId);
+      frameId = null;
+    }
   }
 
   return {
@@ -213,17 +264,33 @@ export function tooltipPlugin(
       init: (u: uPlot) => {
         tooltipManager.initialize();
         over = u.over;
+        activeUplot = u;
 
-        window.addEventListener("scroll", syncBounds, true);
-        window.addEventListener("resize", syncBounds);
+        onWindowScroll = () => {
+          if (syncBounds()) {
+            positionFromLastCursor();
+          }
+        };
+        onWindowResize = () => {
+          if (syncBounds()) {
+            positionFromLastCursor();
+          }
+        };
+
+        window.addEventListener("scroll", onWindowScroll, true);
+        window.addEventListener("resize", onWindowResize);
 
         over.onmouseenter = () => {
           isHovering = true;
           tooltipManager.show();
+          startPositionWatcher();
         };
 
         over.onmouseleave = () => {
           isHovering = false;
+          stopPositionWatcher();
+          lastCursorLeft = null;
+          lastCursorTop = null;
 
           if (tooltipManager.getRenderedUplot() === u) {
             tooltipManager.hide(u);
@@ -234,7 +301,9 @@ export function tooltipPlugin(
       },
 
       setSize: () => {
-        syncBounds();
+        if (syncBounds()) {
+          positionFromLastCursor();
+        }
       },
 
       setCursor: (u: uPlot) => {
@@ -299,15 +368,28 @@ export function tooltipPlugin(
         );
 
         tooltipManager.render(u, tooltipElement);
+        lastCursorLeft = left || 0;
+        lastCursorTop = top || 0;
         tooltipManager.positionTooltip({
-          left: (left || 0) + boundingLeft,
-          top: (top || 0) + boundingTop,
+          left: lastCursorLeft + boundingLeft,
+          top: lastCursorTop + boundingTop,
         });
       },
 
       destroy(u: uPlot) {
-        window.removeEventListener("scroll", syncBounds, true);
-        window.removeEventListener("resize", syncBounds);
+        stopPositionWatcher();
+        activeUplot = null;
+        lastCursorLeft = null;
+        lastCursorTop = null;
+
+        if (onWindowScroll) {
+          window.removeEventListener("scroll", onWindowScroll, true);
+          onWindowScroll = null;
+        }
+        if (onWindowResize) {
+          window.removeEventListener("resize", onWindowResize);
+          onWindowResize = null;
+        }
 
         if (over) {
           over.onmouseenter = null;

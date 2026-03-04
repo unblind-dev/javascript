@@ -94,13 +94,6 @@ function TooltipProvider({
   );
 }
 
-function Divider({
-  className = "ub-tooltip-divider",
-  ...props
-}: React.ComponentPropsWithoutRef<"hr">) {
-  return <hr role="presentation" {...props} className={className} />;
-}
-
 function MetricsTooltip() {
   const { visibilityLimit, formattedTime, serieList } = useTooltip();
   const visibleSeries = serieList.slice(0, visibilityLimit);
@@ -108,11 +101,7 @@ function MetricsTooltip() {
 
   return (
     <div className="ub-tooltip ub-tooltip-multiple-metrics">
-      <Header>
-        <DateTime>{formattedTime}</DateTime>
-      </Header>
-      <Divider />
-      <div>
+      <Container>
         <Content>
           {visibleSeries.map((x) => (
             <Serie serie={x} key={x.metric.name}>
@@ -123,7 +112,10 @@ function MetricsTooltip() {
           ))}
         </Content>
         <Summary series={afterLimit} />
-      </div>
+      </Container>
+      <Footer>
+        <DateTime>{formattedTime}</DateTime>
+      </Footer>
     </div>
   );
 }
@@ -136,11 +128,7 @@ function MultipleAttributesTooltip() {
 
   return (
     <div className="ub-tooltip ub-tooltip-multiple-attributes">
-      <Header>
-        <DateTime>{formattedTime}</DateTime>
-      </Header>
-      <Divider />
-      <div>
+      <Container>
         <Content>
           {visibleSeries.map((x, i) => (
             <Serie serie={x} key={"serie_" + i}>
@@ -151,7 +139,10 @@ function MultipleAttributesTooltip() {
           ))}
         </Content>
         <Summary series={afterLimit} />
-      </div>
+      </Container>
+      <Footer>
+        <DateTime>{formattedTime}</DateTime>
+      </Footer>
     </div>
   );
 }
@@ -163,11 +154,7 @@ function MultipleAttributesMultipleMetricsTooltip() {
 
   return (
     <div className="ub-tooltip ub-tooltip-multiple-metrics-attributes">
-      <Header>
-        <DateTime>{formattedTime}</DateTime>
-      </Header>
-      <Divider />
-      <div>
+      <Container>
         <Content>
           {visibleSeries.map((x, i) => (
             <Serie serie={x} key={"serie" + i}>
@@ -179,7 +166,10 @@ function MultipleAttributesMultipleMetricsTooltip() {
           ))}
         </Content>
         <Summary series={afterLimit} />
-      </div>
+      </Container>
+      <Footer>
+        <DateTime>{formattedTime}</DateTime>
+      </Footer>
     </div>
   );
 }
@@ -210,7 +200,7 @@ function Summary({ series }: { series: Array<TooltipSerie> }) {
     return (
       <span className="ub-tooltip-summary">
         <span>+{series.length} more with </span>
-        <span>{`${invertSort ? "≥" : "≤"} ${formattedVal}`}</span>
+        <span className="ub-tooltip-serie-value">{`${invertSort ? "≥" : "≤"} ${formattedVal}`}</span>
       </span>
     );
   }
@@ -238,8 +228,12 @@ function Content(props: PropsWithChildren) {
   );
 }
 
-function Header(props: PropsWithChildren) {
-  return <div className="ub-tooltip-header">{props.children}</div>;
+function Container(props: PropsWithChildren) {
+  return <div className="ub-tooltip-container">{props.children}</div>;
+}
+
+function Footer(props: PropsWithChildren) {
+  return <div className="ub-tooltip-footer">{props.children}</div>;
 }
 
 function DateTime(props: PropsWithChildren) {
@@ -270,7 +264,12 @@ function Value() {
 function Color() {
   const { color: backgroundColor } = useTooltipSerie();
   return (
-    <span style={{ backgroundColor }} className="ub-tooltip-serie-color" />
+    <div className="ub-tooltip-serie-color-container">
+      <span
+        style={{ backgroundColor }}
+        className="ub-tooltip-serie-color"
+      ></span>
+    </div>
   );
 }
 
@@ -284,7 +283,7 @@ function Attributes() {
 
   return (
     <div className="ub-tooltip-serie-attributes ub-truncate">
-      {attributeValues.map((attributeValue, index) => (
+      {attributeValues.map((attributeValue) => (
         <Fragment key={"tooltip-" + attributeValue}>
           <span className="ub-tooltip-serie-attribute-value ub-truncate">
             {attributeValue}
