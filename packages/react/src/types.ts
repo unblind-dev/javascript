@@ -233,6 +233,12 @@ export interface ChartVisualConfig {
    * Disables suggested label
    */
   disableSuggestedLabel?: boolean;
+
+  /**
+   * Timezone expressed in IATA format.
+   * Such as `Europe/Berlin`, `Asia/Tokyo` or `America/Los_Angeles`
+   */
+  timeZone?: string;
 }
 
 export interface TooltipConfig {

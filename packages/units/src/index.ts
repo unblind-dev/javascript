@@ -25,6 +25,7 @@ import {
   getCalendarRanges,
   parseHumanInputToLabel,
 } from "./unblind/datetime";
+import { getTimeZoneInfo } from "./datetime/timezones";
 
 export {
   getValueFormat,
@@ -34,6 +35,7 @@ export {
   dateTimeForTimeZone,
   parseDateMath,
   systemDateFormats,
+  getTimeZoneInfo,
   getCategoryForUnit,
   SI_PREFIXES,
   SI_BASE_INDEX,

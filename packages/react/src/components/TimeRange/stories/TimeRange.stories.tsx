@@ -20,7 +20,7 @@ export const Default: Story = {
 export const AbsoluteRange: Story = {
   args: {},
   decorators: [
-    (Story, context) => (
+    (Story) => (
       <Scope
         startTime={Math.ceil(new Date().getTime() - 3600000)}
         endTime={Math.ceil(new Date().getTime())}
@@ -34,7 +34,7 @@ export const AbsoluteRange: Story = {
 export const AbsoluteRangeDays: Story = {
   args: {},
   decorators: [
-    (Story, context) => (
+    (Story) => (
       <Scope
         startTime={Math.ceil(new Date().getTime() - 360000000)}
         endTime={Math.ceil(new Date().getTime())}
@@ -44,15 +44,31 @@ export const AbsoluteRangeDays: Story = {
     ),
   ],
 };
+
 export const Disabled: Story = {
   args: {
     disabled: true,
   },
   decorators: [
-    (Story, context) => (
+    (Story) => (
       <Scope
         startTime={Math.ceil(new Date().getTime() - 360000000)}
         endTime={Math.ceil(new Date().getTime())}
+      >
+        <Story />
+      </Scope>
+    ),
+  ],
+};
+
+export const Timezone: Story = {
+  args: {},
+  decorators: [
+    (Story) => (
+      <Scope
+        startTime={Math.ceil(new Date().getTime() - 360000000)}
+        endTime={Math.ceil(new Date().getTime())}
+        timeZone="America/Los_Angeles"
       >
         <Story />
       </Scope>

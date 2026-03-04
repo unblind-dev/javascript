@@ -110,6 +110,7 @@ export function Scope({
   relativeTimeAxis,
   invertSort,
   disableSuggestedLabel,
+  timeZone,
 }: ScopeProps) {
   const parentContext = useContext(ScopeConfigContext);
 
@@ -184,6 +185,7 @@ export function Scope({
       groupBy: groupBy ?? parentContext?.groupBy,
       operator: operator ?? parentContext?.operator,
       colors: colors ?? parentContext?.colors,
+      timeZone: timeZone ?? parentContext?.timeZone,
       relativeTimeAxis:
         typeof relativeTimeAxis === "boolean"
           ? relativeTimeAxis
@@ -226,6 +228,7 @@ export function Scope({
       invertSort,
       disableSuggestedLabel,
       updateTimeRange,
+      timeZone,
     ],
   );
 

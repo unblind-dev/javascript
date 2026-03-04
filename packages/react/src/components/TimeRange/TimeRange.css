@@ -3,6 +3,7 @@
   display: inline-flex;
   align-items: center;
   padding-right: 3rem;
+  width: fit-content;
 }
 
 .ub-timerange-trigger {

@@ -14,6 +14,7 @@ import {
   dateTimeForTimeZone,
   formatTimeRangeLabel,
   getCalendarRanges,
+  getTimeZoneInfo,
   parseDateMath as parse,
   parseHumanInput,
   parseHumanInputToLabel,
@@ -31,7 +32,6 @@ const BLUR_COMMIT_DELAY_MS = 100;
 
 export interface TimeRangeProps {
   disabled?: boolean;
-  timezone?: string;
   disableRefresh?: boolean;
   className?: string;
 }
@@ -89,7 +89,6 @@ function RefreshButton({ onClick }: { onClick: () => void }) {
  */
 export function TimeRange({
   disabled,
-  timezone,
   disableRefresh,
   className,
 }: TimeRangeProps) {
@@ -101,6 +100,7 @@ export function TimeRange({
     startTime,
     endTime,
     updateTimeRange,
+    timeZone,
   } = useScope();
   const committedStartTime = useRef(startTime);
   const committedEndTime = useRef(endTime);
@@ -115,7 +115,7 @@ export function TimeRange({
 
   const initialLabel = useMemo(() => {
     if (startTime && endTime) {
-      return formatTimeRangeLabel(startTime, endTime, timezone);
+      return formatTimeRangeLabel(startTime, endTime, timeZone);
     }
     if (scopeTimeRange) {
       return (
@@ -124,7 +124,7 @@ export function TimeRange({
       );
     }
     return DEFAULT_RANGE_LABEL;
-  }, [startTime, endTime, scopeTimeRange, timezone, allRanges]);
+  }, [startTime, endTime, scopeTimeRange, timeZone, allRanges]);
 
   const [inputValue, setInputValue] = useState(initialLabel);
   const [isOpen, setIsOpen] = useState(false);
@@ -184,14 +184,14 @@ export function TimeRange({
         formatTimeRangeLabel(
           committedStartTime.current,
           committedEndTime.current,
-          timezone,
+          timeZone,
         ),
       );
     } else {
       setInputValue(committedValue.current);
     }
     close();
-  }, [close, timezone, updateTimeRange]);
+  }, [close, timeZone, updateTimeRange]);
 
   const commit = useCallback(
     (label: string, value: TimeRangeValue) => {
@@ -200,7 +200,7 @@ export function TimeRange({
       close();
       const raw = parseHumanInput(label);
       if (raw) {
-        const now = dateTimeForTimeZone(timezone);
+        const now = dateTimeForTimeZone(timeZone);
 
         const fromMath = raw.from.startsWith("now")
           ? raw.from.slice("now".length)
@@ -219,7 +219,7 @@ export function TimeRange({
         }
       }
     },
-    [close, timezone, updateTimeRange],
+    [close, timeZone, updateTimeRange],
   );
 
   const selectOption = useCallback(
@@ -245,11 +245,11 @@ export function TimeRange({
     if (startTime != null && endTime != null) {
       committedStartTime.current = startTime;
       committedEndTime.current = endTime;
-      const label = formatTimeRangeLabel(startTime, endTime, timezone);
+      const label = formatTimeRangeLabel(startTime, endTime, timeZone);
       committedValue.current = label;
       setInputValue(label);
     }
-  }, [startTime, endTime, timezone]);
+  }, [startTime, endTime, timeZone]);
 
   const activeOptionId =
     isOpen && activeIndex >= 0 ? `${id}-opt-${activeIndex}` : undefined;
@@ -452,7 +452,8 @@ export function TimeRange({
             <li role="presentation">
               <div className="ub-timerange-timezone">
                 <span>Timezone</span>
-                {Intl.DateTimeFormat().resolvedOptions().timeZone}
+                {/* Just use a random getTime */}
+                {getTimeZoneInfo(timeZone || "", new Date().getTime())?.name}
               </div>
             </li>
           </ul>
