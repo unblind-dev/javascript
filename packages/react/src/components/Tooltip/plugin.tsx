@@ -83,10 +83,18 @@ function findNearestNonNullIndex(u: uPlot, idx: number): number {
   return idx;
 }
 
+export interface TooltipSerieListOptions {
+  maxAttributeKeySetCount: number;
+  hasAttributes: boolean;
+  hasMultipleMetrics: boolean;
+  hasMultipleAttributes: boolean;
+  spansMultipleDays: boolean;
+}
+
 /**
  * Builds tooltip items from uPlot data
  */
-function buildTooltipSerieList(
+function buildTooltipSerieListParams(
   u: uPlot,
   actualIdx: number,
   formatValue: (v: number) => string,
@@ -94,15 +102,8 @@ function buildTooltipSerieList(
   metadata: Record<string, LabeledMetricMetadata>,
   series?: Serie[],
   timeZone?: string,
-): {
-  tooltipSerieList: TooltipSerie[];
-  maxAttributeKeySetCount: number;
-  hasAttributes: boolean;
-  hasMultipleMetrics: boolean;
-  hasMultipleAttributes: boolean;
-  spansMultipleDays: boolean;
-} {
-  const tooltipSerieList: TooltipSerie[] = [];
+): { serieList: TooltipSerie[]; options: TooltipSerieListOptions } {
+  const serieList: TooltipSerie[] = [];
   const xData = u.data[0];
 
   // Track unique metrics and attributes efficiently
@@ -162,7 +163,7 @@ function buildTooltipSerieList(
           ? formatValue(rawVal)
           : String(rawVal);
 
-    tooltipSerieList.push({
+    serieList.push({
       metric,
       color,
       value: rawVal === null ? undefined : rawVal,
@@ -173,18 +174,230 @@ function buildTooltipSerieList(
   }
 
   return {
-    tooltipSerieList,
-    hasAttributes: hasAnyAttributes,
-    hasMultipleMetrics: seenMetrics.size > 1,
-    hasMultipleAttributes: seenAttributeKeys.size > 1,
-    maxAttributeKeySetCount: maxAttributeKeySetCount,
-    spansMultipleDays: checkIfSpansMultipleDays(xData, timeZone),
+    serieList,
+    options: {
+      hasAttributes: hasAnyAttributes,
+      hasMultipleMetrics: seenMetrics.size > 1,
+      hasMultipleAttributes: seenAttributeKeys.size > 1,
+      maxAttributeKeySetCount: maxAttributeKeySetCount,
+      spansMultipleDays: checkIfSpansMultipleDays(xData, timeZone),
+    },
   };
 }
 
 /**
- * uPlot plugin for interactive tooltips
- * Extracted from: https://github.com/leeoniya/uPlot/blob/master/demos/cursor-tooltip.html
+ * Configuration interface for the Tooltip Plugin
+ */
+interface TooltipPluginConfig {
+  formatValue: (v: number) => string;
+  stacked: boolean;
+  metadata: Record<string, LabeledMetricMetadata>;
+  timeZone?: string;
+  appearance?: React.ComponentType<TooltipProps>;
+  series?: Serie[];
+  visibilityLimit?: number;
+  invertSort?: boolean;
+  disableSuggestedLabel?: boolean;
+}
+
+class TooltipController {
+  private over!: HTMLElement;
+  private activeUplot: uPlot | null = null;
+  private isHovering = false;
+
+  private boundingLeft = 0;
+  private boundingTop = 0;
+  private lastCursorLeft: number | null = null;
+  private lastCursorTop: number | null = null;
+
+  constructor(private config: TooltipPluginConfig) {}
+
+  public getHooks(): uPlot.Plugin["hooks"] {
+    return {
+      init: this.init.bind(this),
+      setSize: this.syncBounds.bind(this),
+      setCursor: this.handleCursor.bind(this),
+      destroy: this.destroy.bind(this),
+    };
+  }
+
+  private init(u: uPlot) {
+    tooltipManager.initialize();
+    this.over = u.over;
+    this.activeUplot = u;
+
+    window.addEventListener("scroll", this.handleWindowEvent, {
+      capture: true,
+      passive: true,
+    });
+    window.addEventListener("resize", this.handleWindowEvent, {
+      passive: true,
+    });
+    document.addEventListener("visibilitychange", this.handleVisibilityChange);
+    window.addEventListener("blur", this.cleanupHoverState);
+
+    this.over.onmouseenter = this.handleMouseEnter;
+    this.over.onmouseleave = this.cleanupHoverState;
+
+    this.syncBounds();
+  }
+
+  private handleMouseEnter = () => {
+    this.isHovering = true;
+    tooltipManager.show();
+  };
+
+  private cleanupHoverState = () => {
+    if (!this.isHovering) return;
+
+    this.isHovering = false;
+    this.lastCursorLeft = null;
+    this.lastCursorTop = null;
+
+    if (
+      this.activeUplot &&
+      tooltipManager.getRenderedUplot() === this.activeUplot
+    ) {
+      tooltipManager.hide(this.activeUplot);
+    }
+  };
+
+  private handleVisibilityChange = () => {
+    if (document.hidden) this.cleanupHoverState();
+  };
+
+  private handleWindowEvent = () => {
+    if (this.syncBounds()) {
+      this.positionTooltip();
+    }
+  };
+
+  private handleCursor(u: uPlot) {
+    const { left, top, idx } = u.cursor;
+
+    // Safety guard: prevent background rendering & accumulation
+    const shouldHide = !this.isHovering || idx == null || document.hidden;
+
+    if (shouldHide) {
+      if (tooltipManager.getRenderedUplot() === u) {
+        tooltipManager.hide(u);
+      }
+      return;
+    }
+
+    const actualIdx = findNearestNonNullIndex(u, idx!);
+    const timestamp = u.data[0][actualIdx];
+    if (timestamp === undefined) return;
+
+    // Build metric data and options for tooltip
+    const { serieList, options } = buildTooltipSerieListParams(
+      u,
+      actualIdx,
+      this.config.formatValue,
+      this.config.stacked,
+      this.config.metadata,
+      this.config.series,
+      this.config.timeZone,
+    );
+
+    tooltipManager.show();
+
+    const tooltipElement = this.buildTooltipElement(
+      timestamp,
+      serieList,
+      options,
+    );
+    tooltipManager.render(u, tooltipElement);
+
+    this.lastCursorLeft = left || 0;
+    this.lastCursorTop = top || 0;
+    this.positionTooltip();
+  }
+
+  private buildTooltipElement(
+    timestamp: number,
+    serieList: TooltipSerie[],
+    serieListOptions: TooltipSerieListOptions,
+  ) {
+    const {
+      appearance: Appearance,
+      timeZone,
+      stacked,
+      visibilityLimit,
+      invertSort,
+      disableSuggestedLabel,
+    } = this.config;
+
+    return Appearance ? (
+      <Appearance
+        timestamp={timestamp}
+        serieList={serieList}
+        options={{
+          timeZone,
+        }}
+      />
+    ) : (
+      <Tooltip
+        timestamp={timestamp}
+        serieList={serieList}
+        serieListOptions={serieListOptions}
+        options={{
+          timeZone,
+          stacked,
+          visibilityLimit,
+          invertSort,
+          disableSuggestedLabel,
+        }}
+      />
+    );
+  }
+
+  private positionTooltip() {
+    if (
+      !this.isHovering ||
+      this.lastCursorLeft == null ||
+      this.lastCursorTop == null
+    )
+      return;
+
+    tooltipManager.positionTooltip({
+      left: this.lastCursorLeft + this.boundingLeft,
+      top: this.lastCursorTop + this.boundingTop,
+    });
+  }
+
+  private syncBounds(): boolean {
+    const bbox = this.over.getBoundingClientRect();
+    const changed =
+      bbox.left !== this.boundingLeft || bbox.top !== this.boundingTop;
+    this.boundingLeft = bbox.left;
+    this.boundingTop = bbox.top;
+    return changed;
+  }
+
+  private destroy() {
+    this.cleanupHoverState();
+
+    // Global listener cleanup
+    window.removeEventListener("scroll", this.handleWindowEvent, true);
+    window.removeEventListener("resize", this.handleWindowEvent);
+    document.removeEventListener(
+      "visibilitychange",
+      this.handleVisibilityChange,
+    );
+    window.removeEventListener("blur", this.cleanupHoverState);
+
+    if (this.over) {
+      this.over.onmouseenter = null;
+      this.over.onmouseleave = null;
+    }
+
+    this.activeUplot = null;
+  }
+}
+
+/**
+ * Plugin function for uPlot
  */
 export function tooltipPlugin(
   formatValue: (v: number) => string,
@@ -197,209 +410,19 @@ export function tooltipPlugin(
   invertSort?: boolean,
   disableSuggestedLabel?: boolean,
 ) {
-  let over: HTMLElement;
-  let boundingLeft: number;
-  let boundingTop: number;
-  let isHovering = false;
-  let lastCursorLeft: number | null = null;
-  let lastCursorTop: number | null = null;
-  let activeUplot: uPlot | null = null;
-  let frameId: number | null = null;
-  let onWindowScroll: (() => void) | null = null;
-  let onWindowResize: (() => void) | null = null;
-
-  function syncBounds(): boolean {
-    const bbox = over.getBoundingClientRect();
-    const changed = bbox.left !== boundingLeft || bbox.top !== boundingTop;
-    boundingLeft = bbox.left;
-    boundingTop = bbox.top;
-    return changed;
-  }
-
-  function positionFromLastCursor() {
-    if (
-      !activeUplot ||
-      !isHovering ||
-      lastCursorLeft == null ||
-      lastCursorTop == null ||
-      tooltipManager.getRenderedUplot() !== activeUplot
-    ) {
-      return;
-    }
-
-    tooltipManager.positionTooltip({
-      left: lastCursorLeft + boundingLeft,
-      top: lastCursorTop + boundingTop,
-    });
-  }
-
-  function startPositionWatcher() {
-    if (frameId != null) return;
-
-    const step = () => {
-      if (!isHovering) {
-        frameId = null;
-        return;
-      }
-
-      if (syncBounds()) {
-        positionFromLastCursor();
-      }
-
-      frameId = window.requestAnimationFrame(step);
-    };
-
-    frameId = window.requestAnimationFrame(step);
-  }
-
-  function stopPositionWatcher() {
-    if (frameId != null) {
-      window.cancelAnimationFrame(frameId);
-      frameId = null;
-    }
-  }
+  const controller = new TooltipController({
+    formatValue,
+    stacked,
+    metadata,
+    timeZone,
+    appearance,
+    series,
+    visibilityLimit,
+    invertSort,
+    disableSuggestedLabel,
+  });
 
   return {
-    hooks: {
-      init: (u: uPlot) => {
-        tooltipManager.initialize();
-        over = u.over;
-        activeUplot = u;
-
-        onWindowScroll = () => {
-          if (syncBounds()) {
-            positionFromLastCursor();
-          }
-        };
-        onWindowResize = () => {
-          if (syncBounds()) {
-            positionFromLastCursor();
-          }
-        };
-
-        window.addEventListener("scroll", onWindowScroll, true);
-        window.addEventListener("resize", onWindowResize);
-
-        over.onmouseenter = () => {
-          isHovering = true;
-          tooltipManager.show();
-          startPositionWatcher();
-        };
-
-        over.onmouseleave = () => {
-          isHovering = false;
-          stopPositionWatcher();
-          lastCursorLeft = null;
-          lastCursorTop = null;
-
-          if (tooltipManager.getRenderedUplot() === u) {
-            tooltipManager.hide(u);
-          }
-        };
-
-        syncBounds();
-      },
-
-      setSize: () => {
-        if (syncBounds()) {
-          positionFromLastCursor();
-        }
-      },
-
-      setCursor: (u: uPlot) => {
-        const { left, top, idx } = u.cursor;
-        const shouldHideTooltip = !isHovering || idx == null;
-
-        if (shouldHideTooltip) {
-          if (tooltipManager.getRenderedUplot() === u) {
-            tooltipManager.hide(u);
-          }
-          return;
-        }
-
-        const actualIdx = findNearestNonNullIndex(u, idx);
-        const timestamp = u.data[0][actualIdx];
-
-        if (timestamp === undefined) {
-          return;
-        }
-
-        const {
-          tooltipSerieList,
-          hasAttributes,
-          hasMultipleAttributes,
-          hasMultipleMetrics,
-          maxAttributeKeySetCount,
-          spansMultipleDays,
-        } = buildTooltipSerieList(
-          u,
-          actualIdx,
-          formatValue,
-          stacked,
-          metadata,
-          series,
-          timeZone,
-        );
-
-        tooltipManager.show();
-
-        const AppearanceTooltip = appearance;
-        const tooltipElement = AppearanceTooltip ? (
-          <AppearanceTooltip
-            timestamp={timestamp}
-            serieList={tooltipSerieList}
-            timeZone={timeZone}
-          />
-        ) : (
-          <Tooltip
-            timestamp={timestamp}
-            serieList={tooltipSerieList}
-            timeZone={timeZone}
-            spansMultipleDays={spansMultipleDays}
-            stacked={stacked}
-            hasAttributes={hasAttributes}
-            hasMultipleAttributes={hasMultipleAttributes}
-            hasMultipleMetrics={hasMultipleMetrics}
-            maxAttributeKeySetCount={maxAttributeKeySetCount}
-            visibilityLimit={visibilityLimit}
-            invertSort={invertSort}
-            disableSuggestedLabel={disableSuggestedLabel}
-          />
-        );
-
-        tooltipManager.render(u, tooltipElement);
-        lastCursorLeft = left || 0;
-        lastCursorTop = top || 0;
-        tooltipManager.positionTooltip({
-          left: lastCursorLeft + boundingLeft,
-          top: lastCursorTop + boundingTop,
-        });
-      },
-
-      destroy(u: uPlot) {
-        stopPositionWatcher();
-        activeUplot = null;
-        lastCursorLeft = null;
-        lastCursorTop = null;
-
-        if (onWindowScroll) {
-          window.removeEventListener("scroll", onWindowScroll, true);
-          onWindowScroll = null;
-        }
-        if (onWindowResize) {
-          window.removeEventListener("resize", onWindowResize);
-          onWindowResize = null;
-        }
-
-        if (over) {
-          over.onmouseenter = null;
-          over.onmouseleave = null;
-        }
-
-        if (tooltipManager.getRenderedUplot() === u) {
-          tooltipManager.hide(u);
-        }
-      },
-    },
+    hooks: controller.getHooks(),
   };
 }

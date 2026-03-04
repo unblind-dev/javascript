@@ -1,25 +1,24 @@
 import { dateTimeFormat } from "@unblind/units";
 import { createContext, Fragment, PropsWithChildren, useContext } from "react";
 import { TooltipSerie } from "@/types";
+import { TooltipSerieListOptions } from "./plugin";
 
 // Types
 export interface TooltipProps {
   timestamp: number;
   serieList: TooltipSerie[];
-  timeZone?: string;
-  stacked?: boolean;
-  invertSort?: boolean;
-  visibilityLimit?: number;
-  disableSuggestedLabel?: boolean;
+  options: {
+    timeZone?: string;
+    stacked?: boolean;
+    invertSort?: boolean;
+    visibilityLimit?: number;
+    disableSuggestedLabel?: boolean;
+  };
 }
 
-interface TooltipExtendedProps extends TooltipProps {
-  spansMultipleDays?: boolean;
-  hasMultipleMetrics: boolean;
-  hasMultipleAttributes: boolean;
-  hasAttributes: boolean;
-  maxAttributeKeySetCount: number;
-}
+type TooltipExtendedProps = TooltipProps & {
+  serieListOptions: TooltipSerieListOptions;
+};
 
 const DEFAULT_VISIBILITY_LIMIT = 6;
 
@@ -42,12 +41,9 @@ function SerieProvider({
     <SerieContext.Provider value={serie}>{children}</SerieContext.Provider>
   );
 }
-// Context for tooltip
+
 const TooltipContext = createContext<
-  | (Pick<
-      TooltipProps,
-      "disableSuggestedLabel" | "invertSort" | "visibilityLimit"
-    > & {
+  | (Pick<TooltipProps, "options"> & {
       formattedTime: string;
       serieList: Array<TooltipSerie>;
       maxAttributeKeySetCount: number;
@@ -72,19 +68,19 @@ function TooltipProvider({
 }: PropsWithChildren & {
   maxAttributeKeySetCount: number;
   formattedTime: string;
-  tooltip: Pick<
-    TooltipProps,
-    "disableSuggestedLabel" | "invertSort" | "visibilityLimit"
-  >;
+  tooltip: Pick<TooltipProps, "options">;
   serieList: Array<TooltipSerie>;
 }) {
   return (
     <TooltipContext.Provider
       value={{
+        options: {
+          disableSuggestedLabel: tooltip.options.disableSuggestedLabel,
+          invertSort: tooltip.options.invertSort,
+          visibilityLimit:
+            tooltip.options.visibilityLimit || DEFAULT_VISIBILITY_LIMIT,
+        },
         formattedTime,
-        disableSuggestedLabel: tooltip.disableSuggestedLabel,
-        invertSort: tooltip.invertSort,
-        visibilityLimit: tooltip.visibilityLimit || DEFAULT_VISIBILITY_LIMIT,
         serieList,
         maxAttributeKeySetCount,
       }}
@@ -95,7 +91,8 @@ function TooltipProvider({
 }
 
 function MetricsTooltip() {
-  const { visibilityLimit, formattedTime, serieList } = useTooltip();
+  const { options, formattedTime, serieList } = useTooltip();
+  const { visibilityLimit } = options;
   const visibleSeries = serieList.slice(0, visibilityLimit);
   const afterLimit = serieList.slice(visibilityLimit);
 
@@ -121,7 +118,8 @@ function MetricsTooltip() {
 }
 
 function MultipleAttributesTooltip() {
-  const { visibilityLimit, formattedTime, serieList } = useTooltip();
+  const { options, formattedTime, serieList } = useTooltip();
+  const { visibilityLimit } = options;
 
   const visibleSeries = serieList.slice(0, visibilityLimit);
   const afterLimit = serieList.slice(visibilityLimit);
@@ -148,7 +146,8 @@ function MultipleAttributesTooltip() {
 }
 
 function MultipleAttributesMultipleMetricsTooltip() {
-  const { visibilityLimit, formattedTime, serieList } = useTooltip();
+  const { options, formattedTime, serieList } = useTooltip();
+  const { visibilityLimit } = options;
   const visibleSeries = serieList.slice(0, visibilityLimit);
   const afterLimit = serieList.slice(visibilityLimit);
 
@@ -178,7 +177,8 @@ function Summary({ series }: { series: Array<TooltipSerie> }) {
   const formattedVal = series[0]?.formattedValue;
   const allZeroes = !series.some((x) => (x.value || 0) > 0);
   const allUndefined = !series.some((x) => x.value !== undefined);
-  const { invertSort } = useTooltip();
+  const { options } = useTooltip();
+  const { invertSort } = options;
 
   if (series.length > 0) {
     if (allUndefined) {
@@ -242,7 +242,9 @@ function DateTime(props: PropsWithChildren) {
 
 function Metric() {
   const serie = useTooltipSerie();
-  const { disableSuggestedLabel } = useTooltip();
+  const { options } = useTooltip();
+  const { disableSuggestedLabel } = options;
+
   return (
     <span className="ub-tooltip-serie-metric ub-truncate">
       {serie.metric.label ||
@@ -318,15 +320,17 @@ export function sortSeriesByValue({
 export function Tooltip({
   timestamp,
   serieList: unsortedserieList,
-  timeZone,
-  spansMultipleDays,
-  hasMultipleMetrics,
-  hasAttributes,
-  maxAttributeKeySetCount,
-  invertSort,
-  visibilityLimit,
-  disableSuggestedLabel,
+  serieListOptions,
+  options,
 }: TooltipExtendedProps) {
+  const { timeZone, invertSort, visibilityLimit, disableSuggestedLabel } =
+    options;
+  const {
+    spansMultipleDays,
+    hasMultipleMetrics,
+    hasAttributes,
+    maxAttributeKeySetCount,
+  } = serieListOptions;
   const serieList = sortSeriesByValue({
     serieList: unsortedserieList,
     invertSort,
@@ -345,9 +349,11 @@ export function Tooltip({
     return (
       <TooltipProvider
         tooltip={{
-          invertSort,
-          visibilityLimit,
-          disableSuggestedLabel,
+          options: {
+            invertSort,
+            visibilityLimit,
+            disableSuggestedLabel,
+          },
         }}
         formattedTime={formattedTime}
         serieList={serieList}
@@ -362,9 +368,11 @@ export function Tooltip({
     return (
       <TooltipProvider
         tooltip={{
-          invertSort,
-          visibilityLimit,
-          disableSuggestedLabel,
+          options: {
+            invertSort,
+            visibilityLimit,
+            disableSuggestedLabel,
+          },
         }}
         formattedTime={formattedTime}
         serieList={serieList}
@@ -378,9 +386,11 @@ export function Tooltip({
   return (
     <TooltipProvider
       tooltip={{
-        invertSort,
-        visibilityLimit,
-        disableSuggestedLabel,
+        options: {
+          invertSort,
+          visibilityLimit,
+          disableSuggestedLabel,
+        },
       }}
       formattedTime={formattedTime}
       serieList={serieList}
