@@ -453,7 +453,9 @@ export function TimeRange({
               <div className="ub-timerange-timezone">
                 <span>Timezone</span>
                 {/* Just use a random getTime */}
-                {getTimeZoneInfo(timeZone || "", new Date().getTime())?.name}
+                {timeZone
+                  ? getTimeZoneInfo(timeZone, new Date().getTime())?.name
+                  : Intl.DateTimeFormat().resolvedOptions().timeZone}
               </div>
             </li>
           </ul>
