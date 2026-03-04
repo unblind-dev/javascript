@@ -324,3 +324,74 @@ export function isLabeledMetric(value: unknown): value is LabeledMetric {
     typeof (value as LabeledMetric).label === "string"
   );
 }
+
+export type SpanKind =
+  | "SERVER"
+  | "CLIENT"
+  | "INTERNAL"
+  | "PRODUCER"
+  | "CONSUMER";
+
+export type StatusCode = "OK" | "ERROR" | "UNSET";
+
+/**
+ * A single OpenTelemetry span as returned by the Unblind API.
+ */
+export interface Span {
+  /**
+   * Unix timestamp in milliseconds of when the span started.
+   */
+  timestamp: number;
+
+  /**
+   * The trace this span belongs to.
+   */
+  traceId: string;
+
+  /**
+   * Unique identifier for this span.
+   */
+  spanId: string;
+
+  /**
+   * The spanId of the parent span, or null for root spans.
+   */
+  parentSpanId: string | null;
+
+  /**
+   * Human-readable name of the operation, e.g. "POST /checkout".
+   */
+  spanName: string;
+
+  /**
+   * The role of the span within the request lifecycle.
+   */
+  spanKind: SpanKind;
+
+  /**
+   * The service that emitted this span, e.g. "checkout-service".
+   */
+  serviceName: string;
+
+  /**
+   * Span duration in nanoseconds.
+   */
+  duration: number;
+
+  /**
+   * Whether the span completed successfully, with an error, or has no status set.
+   */
+  statusCode: StatusCode;
+
+  /**
+   * Optional human-readable message accompanying the status, typically
+   * populated when statusCode is "ERROR".
+   */
+  statusMessage: string | null;
+
+  /**
+   * Resource and span attributes. Only present when `includeAttributes` is true
+   * in the query params.
+   */
+  attributes?: Record<string, string>;
+}
