@@ -729,6 +729,73 @@ export const CustomTimeRange: Story = {
   },
 };
 
+export const AsiaTokyoTimezone: Story = {
+  args: {
+    type: "line",
+    fill: true,
+    times: timePresets.last24Hours(),
+    timeZone: "Asia/Tokyo",
+    series: [
+      generateSeries({
+        metric: "memory.usage",
+        length: timePresets.last24Hours().length,
+        pattern: "random",
+        min: 10,
+        max: 15,
+        queryIndex: 1,
+        attributes: {
+          "service.name": "purchases-service",
+          region: "us-east-2",
+        },
+      }),
+      generateSeries({
+        metric: "cpu.usage",
+        length: timePresets.last24Hours().length,
+        pattern: "random",
+        min: 40,
+        max: 50,
+        queryIndex: 0,
+        attributes: {
+          "service.name": "purchases-service",
+          region: "us-east-2",
+        },
+      }),
+      generateSeries({
+        metric: "disk.usage",
+        length: timePresets.last24Hours().length,
+        pattern: "random",
+        min: 30,
+        max: 35,
+        queryIndex: 2,
+        attributes: {
+          "service.name": "purchases-service",
+          region: "us-east-2",
+        },
+      }),
+    ],
+    metadata: generateMetadataDict([
+      {
+        name: "cpu.usage",
+        suggestedLabel: "CPU",
+        ...unitPresets.percent,
+        type: "gauge",
+      },
+      {
+        name: "memory.usage",
+        suggestedLabel: "Memory",
+        ...unitPresets.percent,
+        type: "gauge",
+      },
+      {
+        name: "disk.usage",
+        suggestedLabel: "Disk",
+        ...unitPresets.percent,
+        type: "gauge",
+      },
+    ]),
+  },
+};
+
 export const RelativeTime: Story = {
   args: {
     type: "spline",

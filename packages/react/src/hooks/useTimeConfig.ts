@@ -1,12 +1,12 @@
 import { getTimeConfig } from "./utils";
 import { useScope } from "@/providers";
 import { useMemo } from "react";
-import ms from "ms";
+import { TimeRangeValue } from "@unblind/units";
 
 export function useTimeConfig(props: {
   startTime?: number;
   endTime?: number;
-  timeRange?: ms.StringValue;
+  timeRange?: TimeRangeValue;
 }) {
   const scope = useScope();
 

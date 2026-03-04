@@ -20,7 +20,6 @@ export interface ChartProps extends ChartVisualConfig {
   type: ChartType;
   invertSort?: boolean;
   className?: string;
-  timeZone?: string;
   options?: uPlot.Options;
   tooltipComponent?: React.ComponentType<TooltipProps>;
 }

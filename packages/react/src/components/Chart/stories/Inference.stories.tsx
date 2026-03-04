@@ -1,22 +1,87 @@
+import { TimeRange } from "@/components/TimeRange";
 import { Chart } from "..";
-import {
-  ChartCard,
-  generateMetadataDict,
-  generateSeries,
-  timePresets,
-} from "./utils";
-import type { ComponentProps } from "react";
+import { ChartCard, generateMetadataDict, generateSeries } from "./utils";
+import { useMemo, type ComponentProps } from "react";
+import { useScope } from "@/providers";
+import { deduceTimestamp } from "@/hooks/utils";
 
 export default {
-  title: "Examples/LLM Inference Dashboard",
+  title: "Examples/Inference",
 };
 
 type ChartProps = ComponentProps<typeof Chart>;
+type DashboardCard = { title: string; badge?: string } & Omit<
+  ChartProps,
+  "times"
+>;
 
-const lastHour = timePresets.lastHourByMinute();
-const last24h = timePresets.last24Hours();
-const last7d = timePresets.last7Days();
-const last30d = timePresets.last30Days();
+const SYNCHRONIZED_POINTS = 61;
+const LAST_24H_POINTS = 97;
+const LAST_7D_POINTS = 169;
+const LAST_30D_POINTS = 31;
+
+function buildSynchronizedTimes(startTime: number, endTime: number): number[] {
+  if (startTime >= endTime) {
+    return [startTime];
+  }
+
+  const step = (endTime - startTime) / (SYNCHRONIZED_POINTS - 1);
+  return Array.from(
+    { length: SYNCHRONIZED_POINTS },
+    (_, index) => startTime + index * step,
+  );
+}
+
+function resampleValues(values: number[], targetLength: number): number[] {
+  if (targetLength <= 0) {
+    return [];
+  }
+
+  if (values.length === targetLength) {
+    return values;
+  }
+
+  if (values.length === 0) {
+    return Array.from({ length: targetLength }, () => 0);
+  }
+
+  if (values.length === 1) {
+    return Array.from({ length: targetLength }, () => values[0] ?? 0);
+  }
+
+  return Array.from({ length: targetLength }, (_, targetIndex) => {
+    const sourceIndex = Math.round(
+      (targetIndex * (values.length - 1)) / (targetLength - 1),
+    );
+    return values[sourceIndex] ?? values[0] ?? 0;
+  });
+}
+
+function createSeededRandom(seed: number): () => number {
+  let state = seed >>> 0;
+
+  return () => {
+    state += 0x6d2b79f5;
+    let t = state;
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+function regenerateValuesForRange(
+  values: number[],
+  targetLength: number,
+  seed: number,
+): number[] {
+  const resampledValues = resampleValues(values, targetLength);
+  const random = createSeededRandom(seed);
+
+  return resampledValues.map((value) => {
+    const jitter = (random() - 0.5) * 0.24;
+    return Math.round(value * (1 + jitter) * 100) / 100;
+  });
+}
 
 const MODELS = [
   { model: "gpt-4o", tier: "premium" },
@@ -30,67 +95,98 @@ const REGIONS = [
   { host: "inference-3", region: "eu-west-1" },
 ];
 
-export const LLMDashboard = () => (
-  <div
-    style={{
-      padding: "24px",
-      minHeight: "100vh",
-      width: "100%",
-      display: "grid",
-      maxWidth: "1800px",
-    }}
-  >
-    <h1
+export const LLMDashboard = () => {
+  const {
+    timeRange,
+    startTime: scopeStartTime,
+    endTime: scopeEndTime,
+  } = useScope();
+  const [startTime, endTime] = deduceTimestamp(
+    timeRange,
+    scopeStartTime,
+    scopeEndTime,
+  );
+  const synchronizedTimes = useMemo(
+    () => buildSynchronizedTimes(startTime, endTime),
+    [startTime, endTime],
+  );
+  const rangeSeed = useMemo(
+    () => (Math.floor(startTime) ^ Math.floor(endTime)) >>> 0,
+    [startTime, endTime],
+  );
+
+  return (
+    <div
       style={{
-        fontSize: "16px",
-        fontWeight: 600,
-        color: "#ccc",
-        marginBottom: "32px",
-        letterSpacing: "0.05em",
+        padding: "24px",
+        minHeight: "100vh",
+        width: "100%",
+        display: "grid",
+        maxWidth: "1800px",
       }}
     >
-      LLM Inference Explorer
-    </h1>
-    {SECTIONS.map(({ section, cards }) => (
-      <div key={section} style={{ marginTop: "2rem" }}>
-        <p
-          style={{
-            fontSize: "11px",
-            fontWeight: 600,
-            textTransform: "uppercase",
-            letterSpacing: "0.1em",
-            color: "#555",
-            marginBottom: "16px",
-          }}
-        >
-          {section}
-        </p>
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fill, minmax(400px, 1fr))",
-            gap: "16px",
-          }}
-        >
-          {cards.map(({ title, badge, ...chartProps }) => (
-            <ChartCard
-              key={title}
-              title={title}
-              badge={badge}
-              {...chartProps}
-            />
-          ))}
+      <h1
+        style={{
+          fontSize: "16px",
+          fontWeight: 600,
+          color: "#ccc",
+          marginBottom: "32px",
+          letterSpacing: "0.05em",
+        }}
+      >
+        LLM Inference Explorer
+      </h1>
+      <TimeRange />
+      {SECTIONS.map(({ section, cards }) => (
+        <div key={section} style={{ marginTop: "2rem" }}>
+          <p
+            style={{
+              fontSize: "11px",
+              fontWeight: 600,
+              textTransform: "uppercase",
+              letterSpacing: "0.1em",
+              color: "#555",
+              marginBottom: "16px",
+            }}
+          >
+            {section}
+          </p>
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fill, minmax(400px, 1fr))",
+              gap: "16px",
+            }}
+          >
+            {cards.map(({ title, badge, series, ...chartProps }, cardIndex) => (
+              <ChartCard
+                key={title}
+                title={title}
+                badge={badge}
+                {...chartProps}
+                times={synchronizedTimes}
+                series={series.map((serie, seriesIndex) => ({
+                  ...serie,
+                  values: regenerateValuesForRange(
+                    serie.values,
+                    synchronizedTimes.length,
+                    rangeSeed + cardIndex * 97 + seriesIndex,
+                  ),
+                }))}
+              />
+            ))}
+          </div>
         </div>
-      </div>
-    ))}
-  </div>
-);
+      ))}
+    </div>
+  );
+};
 
 LLMDashboard.parameters = { layout: "fullscreen" };
 
 const SECTIONS: {
   section: string;
-  cards: ({ title: string; badge?: string } & ChartProps)[];
+  cards: DashboardCard[];
 }[] = [
   {
     section: "Latency",
@@ -99,7 +195,6 @@ const SECTIONS: {
         title: "Time to First Token (p50 / p95 / p99)",
         badge: "ms",
         type: "line",
-        times: lastHour,
         series: [
           generateSeries({
             metric: "llm.ttft",
@@ -144,7 +239,6 @@ const SECTIONS: {
         title: "End-to-End Request Latency by Model",
         badge: "ms",
         type: "line",
-        times: lastHour,
         series: MODELS.map((attrs, i) =>
           generateSeries({
             metric: "llm.request.latency",
@@ -170,7 +264,6 @@ const SECTIONS: {
         badge: "tokens/s",
         type: "line",
         fill: true,
-        times: lastHour,
         series: MODELS.map((attrs, i) =>
           generateSeries({
             metric: "llm.tokens_per_sec",
@@ -190,11 +283,10 @@ const SECTIONS: {
         title: "Latency by Region",
         badge: "ms",
         type: "line",
-        times: last24h,
         series: REGIONS.map((attrs, i) =>
           generateSeries({
             metric: "llm.request.latency",
-            length: last24h.length,
+            length: LAST_24H_POINTS,
             pattern: "random",
             min: 1500 + i * 100,
             max: 2000 + i * 300,
@@ -221,7 +313,6 @@ const SECTIONS: {
         badge: "rps",
         type: "line",
         fill: true,
-        times: lastHour,
         series: [
           generateSeries({
             metric: "llm.rps",
@@ -241,7 +332,6 @@ const SECTIONS: {
         title: "Token Throughput — Prompt vs Completion",
         badge: "area",
         type: "area",
-        times: lastHour,
         series: [
           generateSeries({
             metric: "llm.tokens.prompt",
@@ -273,11 +363,10 @@ const SECTIONS: {
         title: "Requests by Model",
         badge: "bar",
         type: "bar",
-        times: last24h,
         series: MODELS.map((attrs, i) =>
           generateSeries({
             metric: "llm.requests",
-            length: last24h.length,
+            length: LAST_24H_POINTS,
             pattern: "random",
             min: 500 + i * 200,
             max: 5000 + i * 1000,
@@ -298,7 +387,6 @@ const SECTIONS: {
         title: "Queue Depth",
         badge: "count",
         type: "line",
-        times: lastHour,
         series: REGIONS.map((attrs, i) =>
           generateSeries({
             metric: "llm.queue.depth",
@@ -328,11 +416,10 @@ const SECTIONS: {
         title: "Total Tokens per Day",
         badge: "count",
         type: "bar",
-        times: last30d,
         series: [
           generateSeries({
             metric: "llm.tokens.total",
-            length: last30d.length,
+            length: LAST_30D_POINTS,
             pattern: "linear",
             min: 5_000_000,
             max: 80_000_000,
@@ -352,11 +439,10 @@ const SECTIONS: {
         title: "Token Usage by Model — 30 days",
         badge: "area",
         type: "area",
-        times: last30d,
         series: MODELS.map((attrs, i) =>
           generateSeries({
             metric: "llm.tokens.total",
-            length: last30d.length,
+            length: LAST_30D_POINTS,
             pattern: "linear",
             min: 1_000_000 + i * 500_000,
             max: 20_000_000 + i * 5_000_000,
@@ -377,11 +463,10 @@ const SECTIONS: {
         title: "Context Length Distribution",
         badge: "count",
         type: "bar",
-        times: last24h,
         series: [
           generateSeries({
             metric: "llm.context.short",
-            length: last24h.length,
+            length: LAST_24H_POINTS,
             pattern: "random",
             min: 500,
             max: 3000,
@@ -391,7 +476,7 @@ const SECTIONS: {
           }),
           generateSeries({
             metric: "llm.context.medium",
-            length: last24h.length,
+            length: LAST_24H_POINTS,
             pattern: "random",
             min: 200,
             max: 1500,
@@ -401,7 +486,7 @@ const SECTIONS: {
           }),
           generateSeries({
             metric: "llm.context.long",
-            length: last24h.length,
+            length: LAST_24H_POINTS,
             pattern: "spike",
             min: 0,
             max: 400,
@@ -432,11 +517,10 @@ const SECTIONS: {
         title: "Prompt Cache Hit Rate",
         badge: "percent",
         type: "line",
-        times: last24h,
         series: [
           generateSeries({
             metric: "llm.cache.hit_rate",
-            length: last24h.length,
+            length: LAST_24H_POINTS,
             pattern: "random",
             min: 30,
             max: 55,
@@ -460,11 +544,10 @@ const SECTIONS: {
         title: "Error Rate by Type",
         badge: "area",
         type: "area",
-        times: last24h,
         series: [
           generateSeries({
             metric: "llm.errors.timeout",
-            length: last24h.length,
+            length: LAST_24H_POINTS,
             pattern: "spike",
             min: 0,
             max: 30,
@@ -473,7 +556,7 @@ const SECTIONS: {
           }),
           generateSeries({
             metric: "llm.errors.rate_limit",
-            length: last24h.length,
+            length: LAST_24H_POINTS,
             pattern: "spike",
             min: 0,
             max: 50,
@@ -482,7 +565,7 @@ const SECTIONS: {
           }),
           generateSeries({
             metric: "llm.errors.context_length",
-            length: last24h.length,
+            length: LAST_24H_POINTS,
             pattern: "random",
             min: 0,
             max: 15,
@@ -491,7 +574,7 @@ const SECTIONS: {
           }),
           generateSeries({
             metric: "llm.errors.content_filter",
-            length: last24h.length,
+            length: LAST_24H_POINTS,
             pattern: "random",
             min: 0,
             max: 10,
@@ -516,11 +599,10 @@ const SECTIONS: {
         title: "Success Rate by Region",
         badge: "percent",
         type: "line",
-        times: last24h,
         series: REGIONS.map((attrs, i) =>
           generateSeries({
             metric: "llm.success_rate",
-            length: last24h.length,
+            length: LAST_24H_POINTS,
             pattern: "random",
             min: 96,
             max: 99.9,
@@ -544,11 +626,10 @@ const SECTIONS: {
         title: "Retries per Request",
         badge: "count",
         type: "bar",
-        times: last24h,
         series: [
           generateSeries({
             metric: "llm.retries",
-            length: last24h.length,
+            length: LAST_24H_POINTS,
             pattern: "spike",
             min: 0,
             max: 5,
@@ -564,11 +645,10 @@ const SECTIONS: {
         title: "Content Filter Triggers — 7 days",
         badge: "count",
         type: "bar",
-        times: last7d,
         series: [
           generateSeries({
             metric: "llm.filter.input",
-            length: last7d.length,
+            length: LAST_7D_POINTS,
             pattern: "random",
             min: 0,
             max: 200,
@@ -577,7 +657,7 @@ const SECTIONS: {
           }),
           generateSeries({
             metric: "llm.filter.output",
-            length: last7d.length,
+            length: LAST_7D_POINTS,
             pattern: "random",
             min: 0,
             max: 80,
@@ -599,11 +679,10 @@ const SECTIONS: {
         title: "Daily Spend",
         badge: "USD",
         type: "bar",
-        times: last30d,
         series: [
           generateSeries({
             metric: "llm.cost.total",
-            length: last30d.length,
+            length: LAST_30D_POINTS,
             pattern: "linear",
             min: 200,
             max: 4000,
@@ -622,11 +701,10 @@ const SECTIONS: {
         title: "Cost by Model",
         badge: "area",
         type: "area",
-        times: last30d,
         series: MODELS.map((attrs, i) =>
           generateSeries({
             metric: "llm.cost",
-            length: last30d.length,
+            length: LAST_30D_POINTS,
             pattern: "linear",
             min: 50 + i * 100,
             max: 1000 + i * 500,
@@ -642,12 +720,11 @@ const SECTIONS: {
         title: "Cost per 1k Tokens",
         badge: "USD",
         type: "step",
-        times: last30d,
         max: 0.1,
         series: MODELS.map((attrs, i) =>
           generateSeries({
             metric: "llm.cost_per_1k",
-            length: last30d.length,
+            length: LAST_30D_POINTS,
             pattern: "random",
             min: 0.001 + i * 0.003,
             max: 0.01 + i * 0.005,
@@ -664,15 +741,14 @@ const SECTIONS: {
         ]),
       },
       {
-        title: "Cumulative Spend — 30 days",
+        title: "Spend - Returns — 30 days",
         badge: "USD",
         type: "line",
         fill: true,
-        times: last30d,
         series: [
           generateSeries({
             metric: "llm.cost.cumulative",
-            length: last30d.length,
+            length: LAST_30D_POINTS,
             pattern: "exponential",
             min: 200,
             max: 45000,
@@ -696,7 +772,6 @@ const SECTIONS: {
         title: "GPU Utilization",
         badge: "percent",
         type: "line",
-        times: lastHour,
         series: REGIONS.map((attrs, i) =>
           generateSeries({
             metric: "llm.gpu.utilization",
@@ -724,7 +799,6 @@ const SECTIONS: {
         badge: "bytes",
         type: "line",
         fill: true,
-        times: lastHour,
         series: REGIONS.map((attrs, i) =>
           generateSeries({
             metric: "llm.gpu.memory",
@@ -748,11 +822,10 @@ const SECTIONS: {
         title: "Active Model Replicas",
         badge: "count",
         type: "step",
-        times: last24h,
         series: MODELS.map((attrs, i) =>
           generateSeries({
             metric: "llm.replicas",
-            length: last24h.length,
+            length: LAST_24H_POINTS,
             pattern: "random",
             min: 1 + i,
             max: 8 + i * 2,
@@ -769,11 +842,10 @@ const SECTIONS: {
         title: "Cold Start Duration",
         badge: "ms",
         type: "bar",
-        times: last7d,
         series: MODELS.map((attrs, i) =>
           generateSeries({
             metric: "llm.cold_start",
-            length: last7d.length,
+            length: LAST_7D_POINTS,
             pattern: "random",
             min: 2000 + i * 500,
             max: 15000 + i * 2000,

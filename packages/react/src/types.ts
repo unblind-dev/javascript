@@ -2,8 +2,8 @@
  * Shared types for Unblind React library.
  */
 
-import { StringValue } from "ms";
 import { TooltipProps } from "./components/Tooltip";
+import { TimeRangeValue } from "@unblind/units";
 
 export type MetricType =
   | "gauge"
@@ -29,7 +29,7 @@ export type AggregationOperator =
  */
 export interface MetricMetadata {
   name: string;
-  description: string;
+  description?: string;
   suggestedLabel?: string;
   unit: {
     /// The unique, case-sensitive UCUM identifier (e.g., "mL", "m/s2")
@@ -70,13 +70,6 @@ export interface TimeseriesQuery {
  * Chart types available
  */
 export type ChartType = "bar" | "line" | "area" | "step" | "spline";
-
-/**
- * Time Range definition:
- *
- * e.g. 5secs, 4h, 3 days, and so on.
- */
-export type TimeRange = StringValue;
 
 export interface Log {
   timestamp: number;
@@ -123,7 +116,7 @@ export type TimeConfig = {
    * Optional time range. If not provided, will use timeRange from the provider.
    * Ignored if startTime and endTime are provided.
    */
-  timeRange?: TimeRange;
+  timeRange?: TimeRangeValue;
   /**
    * Optional start time (Unix timestamp in seconds).
    * If provided along with endTime, takes priority over timeRange.
@@ -240,6 +233,12 @@ export interface ChartVisualConfig {
    * Disables suggested label
    */
   disableSuggestedLabel?: boolean;
+
+  /**
+   * Timezone expressed in IATA format.
+   * Such as `Europe/Berlin`, `Asia/Tokyo` or `America/Los_Angeles`
+   */
+  timeZone?: string;
 }
 
 export interface TooltipConfig {
@@ -330,4 +329,75 @@ export function isLabeledMetric(value: unknown): value is LabeledMetric {
     typeof (value as LabeledMetric).name === "string" &&
     typeof (value as LabeledMetric).label === "string"
   );
+}
+
+export type SpanKind =
+  | "SERVER"
+  | "CLIENT"
+  | "INTERNAL"
+  | "PRODUCER"
+  | "CONSUMER";
+
+export type StatusCode = "OK" | "ERROR" | "UNSET";
+
+/**
+ * A single OpenTelemetry span as returned by the Unblind API.
+ */
+export interface Span {
+  /**
+   * Unix timestamp in milliseconds of when the span started.
+   */
+  timestamp: number;
+
+  /**
+   * The trace this span belongs to.
+   */
+  traceId: string;
+
+  /**
+   * Unique identifier for this span.
+   */
+  spanId: string;
+
+  /**
+   * The spanId of the parent span, or null for root spans.
+   */
+  parentSpanId: string | null;
+
+  /**
+   * Human-readable name of the operation, e.g. "POST /checkout".
+   */
+  spanName: string;
+
+  /**
+   * The role of the span within the request lifecycle.
+   */
+  spanKind: SpanKind;
+
+  /**
+   * The service that emitted this span, e.g. "checkout-service".
+   */
+  serviceName: string;
+
+  /**
+   * Span duration in nanoseconds.
+   */
+  duration: number;
+
+  /**
+   * Whether the span completed successfully, with an error, or has no status set.
+   */
+  statusCode: StatusCode;
+
+  /**
+   * Optional human-readable message accompanying the status, typically
+   * populated when statusCode is "ERROR".
+   */
+  statusMessage: string | null;
+
+  /**
+   * Resource and span attributes. Only present when `includeAttributes` is true
+   * in the query params.
+   */
+  attributes?: Record<string, string>;
 }

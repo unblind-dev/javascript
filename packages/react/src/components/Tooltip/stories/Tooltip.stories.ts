@@ -33,9 +33,16 @@ export const SimpleMetric: Story = {
         attributes: {},
       },
     ],
-    timeZone: undefined,
-    spansMultipleDays: false,
-    maxAttributeKeySetCount: 0,
+    options: {
+      timeZone: undefined,
+    },
+    serieListOptions: {
+      spansMultipleDays: false,
+      maxAttributeKeySetCount: 0,
+      hasAttributes: false,
+      hasMultipleMetrics: false,
+      hasMultipleAttributes: false,
+    },
   },
 };
 
@@ -92,13 +99,20 @@ export const MultipleMetrics: Story = {
         attributes: {},
       },
     ],
-    timeZone: undefined,
-    spansMultipleDays: false,
-    maxAttributeKeySetCount: 0,
+    options: {
+      timeZone: undefined,
+    },
+    serieListOptions: {
+      spansMultipleDays: false,
+      maxAttributeKeySetCount: 0,
+      hasAttributes: false,
+      hasMultipleMetrics: true,
+      hasMultipleAttributes: false,
+    },
   },
 };
 
-export const MetricAndAttribute: Story = {
+export const Attribute: Story = {
   args: {
     timestamp: new Date().getTime() / 1000,
     serieList: [
@@ -139,11 +153,16 @@ export const MetricAndAttribute: Story = {
         },
       },
     ],
-    timeZone: undefined,
-    spansMultipleDays: false,
-    hasMultipleAttributes: true,
-    hasAttributes: true,
-    maxAttributeKeySetCount: 1,
+    options: {
+      timeZone: undefined,
+    },
+    serieListOptions: {
+      spansMultipleDays: false,
+      hasMultipleAttributes: true,
+      hasAttributes: true,
+      hasMultipleMetrics: false,
+      maxAttributeKeySetCount: 1,
+    },
   },
 };
 
@@ -190,11 +209,16 @@ export const MultipleAttributes: Story = {
         },
       },
     ],
-    timeZone: undefined,
-    spansMultipleDays: false,
-    hasMultipleAttributes: true,
-    hasAttributes: true,
-    maxAttributeKeySetCount: 2,
+    options: {
+      timeZone: undefined,
+    },
+    serieListOptions: {
+      spansMultipleDays: false,
+      hasMultipleAttributes: true,
+      hasAttributes: true,
+      hasMultipleMetrics: false,
+      maxAttributeKeySetCount: 2,
+    },
   },
 };
 
@@ -355,13 +379,16 @@ export const MultipleMetricsAndAttributes: Story = {
         },
       },
     ],
-    timeZone: undefined,
-    spansMultipleDays: false,
-
-    hasMultipleAttributes: true,
-    hasAttributes: true,
-    hasMultipleMetrics: true,
-    maxAttributeKeySetCount: 2,
+    options: {
+      timeZone: undefined,
+    },
+    serieListOptions: {
+      spansMultipleDays: false,
+      hasMultipleAttributes: true,
+      hasAttributes: true,
+      hasMultipleMetrics: true,
+      maxAttributeKeySetCount: 2,
+    },
   },
 };
 
@@ -522,13 +549,16 @@ export const LimitDisplay: Story = {
         },
       },
     ],
-    timeZone: undefined,
-    spansMultipleDays: false,
-
-    hasMultipleAttributes: true,
-    hasAttributes: true,
-    hasMultipleMetrics: true,
-    maxAttributeKeySetCount: 2,
+    options: {
+      timeZone: undefined,
+    },
+    serieListOptions: {
+      spansMultipleDays: false,
+      hasMultipleAttributes: true,
+      hasAttributes: true,
+      hasMultipleMetrics: true,
+      maxAttributeKeySetCount: 2,
+    },
   },
 };
 
@@ -689,13 +719,16 @@ export const LimitUndefinedDisplay: Story = {
         },
       },
     ],
-    timeZone: undefined,
-    spansMultipleDays: false,
-
-    hasMultipleAttributes: true,
-    hasAttributes: true,
-    hasMultipleMetrics: true,
-    maxAttributeKeySetCount: 2,
+    options: {
+      timeZone: undefined,
+    },
+    serieListOptions: {
+      spansMultipleDays: false,
+      hasMultipleAttributes: true,
+      hasAttributes: true,
+      hasMultipleMetrics: true,
+      maxAttributeKeySetCount: 2,
+    },
   },
 };
 
@@ -856,13 +889,16 @@ export const LimitZerosDisplay: Story = {
         },
       },
     ],
-    timeZone: undefined,
-    spansMultipleDays: false,
-
-    hasMultipleAttributes: true,
-    hasAttributes: true,
-    hasMultipleMetrics: true,
-    maxAttributeKeySetCount: 2,
+    options: {
+      timeZone: undefined,
+    },
+    serieListOptions: {
+      spansMultipleDays: false,
+      hasMultipleAttributes: true,
+      hasAttributes: true,
+      hasMultipleMetrics: true,
+      maxAttributeKeySetCount: 2,
+    },
   },
 };
 
@@ -931,9 +967,16 @@ export const OverflowValues: Story = {
         },
       },
     ],
-    timeZone: undefined,
-    spansMultipleDays: false,
-    maxAttributeKeySetCount: 2,
+    options: {
+      timeZone: undefined,
+    },
+    serieListOptions: {
+      spansMultipleDays: false,
+      maxAttributeKeySetCount: 2,
+      hasAttributes: true,
+      hasMultipleMetrics: true,
+      hasMultipleAttributes: true,
+    },
   },
 };
 
@@ -992,9 +1035,16 @@ export const OverflowMetrics: Story = {
         attributes: {},
       },
     ],
-    timeZone: undefined,
-    spansMultipleDays: false,
-    maxAttributeKeySetCount: 0,
+    options: {
+      timeZone: undefined,
+    },
+    serieListOptions: {
+      spansMultipleDays: false,
+      maxAttributeKeySetCount: 0,
+      hasAttributes: false,
+      hasMultipleMetrics: true,
+      hasMultipleAttributes: false,
+    },
   },
 };
 
@@ -1062,11 +1112,16 @@ export const OverflowAttributes: Story = {
         },
       },
     ],
-    timeZone: undefined,
-    spansMultipleDays: false,
-    hasMultipleAttributes: true,
-    hasAttributes: true,
-    maxAttributeKeySetCount: 2,
+    options: {
+      timeZone: undefined,
+    },
+    serieListOptions: {
+      spansMultipleDays: false,
+      hasMultipleAttributes: true,
+      hasAttributes: true,
+      maxAttributeKeySetCount: 2,
+      hasMultipleMetrics: false,
+    },
   },
 };
 
@@ -1074,7 +1129,15 @@ export const Empty: Story = {
   args: {
     timestamp: new Date().getTime() / 1000,
     serieList: [],
-    timeZone: undefined,
-    spansMultipleDays: false,
+    options: {
+      timeZone: undefined,
+    },
+    serieListOptions: {
+      spansMultipleDays: false,
+      maxAttributeKeySetCount: 0,
+      hasAttributes: false,
+      hasMultipleMetrics: false,
+      hasMultipleAttributes: false,
+    },
   },
 };

@@ -1,85 +1,185 @@
+import { TimeRange } from "@/components/TimeRange";
 import { Chart } from "..";
 import {
   generateMetadataDict,
   generateSeries,
-  timePresets,
-  generateTimes,
   ChartCard,
 } from "./utils";
-import type { ComponentProps } from "react";
+import { useMemo, type ComponentProps } from "react";
+import { useScope } from "@/providers";
+import { deduceTimestamp } from "@/hooks/utils";
 
 export default {
   title: "Examples/Dashboard",
 };
 
 type ChartProps = ComponentProps<typeof Chart>;
+type DashboardCard = { title: string; badge?: string } & Omit<
+  ChartProps,
+  "times"
+>;
 
-const lastHour = timePresets.lastHourByMinute();
-const last24h = timePresets.last24Hours();
-const last7d = timePresets.last7Days();
-const last30d = timePresets.last30Days();
+const SYNCHRONIZED_POINTS = 61;
+const LAST_24H_POINTS = 97;
+const LAST_7D_POINTS = 169;
+const LAST_30D_POINTS = 31;
 
-export const Dashboard = () => (
-  <div
-    style={{
-      padding: "24px",
-      minHeight: "100vh",
-      width: "100%",
-      display: "grid",
-      maxWidth: "1800px",
-    }}
-  >
-    <h1
+function buildSynchronizedTimes(startTime: number, endTime: number): number[] {
+  if (startTime >= endTime) {
+    return [startTime];
+  }
+
+  const step = (endTime - startTime) / (SYNCHRONIZED_POINTS - 1);
+  return Array.from(
+    { length: SYNCHRONIZED_POINTS },
+    (_, index) => startTime + index * step,
+  );
+}
+
+function resampleValues(values: number[], targetLength: number): number[] {
+  if (targetLength <= 0) {
+    return [];
+  }
+
+  if (values.length === targetLength) {
+    return values;
+  }
+
+  if (values.length === 0) {
+    return Array.from({ length: targetLength }, () => 0);
+  }
+
+  if (values.length === 1) {
+    return Array.from({ length: targetLength }, () => values[0] ?? 0);
+  }
+
+  return Array.from({ length: targetLength }, (_, targetIndex) => {
+    const sourceIndex = Math.round(
+      (targetIndex * (values.length - 1)) / (targetLength - 1),
+    );
+    return values[sourceIndex] ?? values[0] ?? 0;
+  });
+}
+
+function createSeededRandom(seed: number): () => number {
+  let state = seed >>> 0;
+
+  return () => {
+    state += 0x6d2b79f5;
+    let t = state;
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+function regenerateValuesForRange(
+  values: number[],
+  targetLength: number,
+  seed: number,
+): number[] {
+  const resampledValues = resampleValues(values, targetLength);
+  const random = createSeededRandom(seed);
+
+  return resampledValues.map((value) => {
+    const jitter = (random() - 0.5) * 0.24;
+    return Math.round(value * (1 + jitter) * 100) / 100;
+  });
+}
+
+export const Dashboard = () => {
+  const {
+    timeRange,
+    startTime: scopeStartTime,
+    endTime: scopeEndTime,
+  } = useScope();
+  const [startTime, endTime] = deduceTimestamp(
+    timeRange,
+    scopeStartTime,
+    scopeEndTime,
+  );
+
+  const synchronizedTimes = useMemo(
+    () => buildSynchronizedTimes(startTime, endTime),
+    [startTime, endTime],
+  );
+  const rangeSeed = useMemo(
+    () => (Math.floor(startTime) ^ Math.floor(endTime)) >>> 0,
+    [startTime, endTime],
+  );
+
+  return (
+    <div
       style={{
-        fontSize: "16px",
-        fontWeight: 600,
-        color: "#ccc",
-        marginBottom: "32px",
-        letterSpacing: "0.05em",
+        padding: "24px",
+        minHeight: "100vh",
+        width: "100%",
+        display: "grid",
+        maxWidth: "1800px",
       }}
     >
-      Chart Explorer
-    </h1>
-    {SECTIONS.map(({ section, cards }) => (
-      <div key={section} style={{ marginTop: "2rem" }}>
-        <p
-          style={{
-            fontSize: "11px",
-            fontWeight: 600,
-            textTransform: "uppercase",
-            letterSpacing: "0.1em",
-            color: "#555",
-            marginBottom: "16px",
-          }}
-        >
-          {section}
-        </p>
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fill, minmax(400px, 1fr))",
-            gap: "16px",
-          }}
-        >
-          {cards.map(({ title, badge, ...chartProps }) => (
-            <ChartCard
-              key={title}
-              title={title}
-              badge={badge}
-              {...chartProps}
-            />
-          ))}
+      <h1
+        style={{
+          fontSize: "16px",
+          fontWeight: 600,
+          color: "#ccc",
+          marginBottom: "32px",
+          letterSpacing: "0.05em",
+        }}
+      >
+        Chart Explorer
+      </h1>
+      <TimeRange />
+      {SECTIONS.map(({ section, cards }) => (
+        <div key={section} style={{ marginTop: "2rem" }}>
+          <p
+            style={{
+              fontSize: "11px",
+              fontWeight: 600,
+              textTransform: "uppercase",
+              letterSpacing: "0.1em",
+              color: "#555",
+              marginBottom: "16px",
+            }}
+          >
+            {section}
+          </p>
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fill, minmax(400px, 1fr))",
+              gap: "16px",
+            }}
+          >
+            {cards.map(({ title, badge, series, ...chartProps }) => (
+              <ChartCard
+                key={title}
+                title={title}
+                badge={badge}
+                {...chartProps}
+                times={synchronizedTimes}
+                series={series.map((serie, index) => ({
+                  ...serie,
+                  values: regenerateValuesForRange(
+                    serie.values,
+                    synchronizedTimes.length,
+                    rangeSeed + index,
+                  ),
+                }))}
+              />
+            ))}
+          </div>
         </div>
-      </div>
-    ))}
-  </div>
-);
+      ))}
+    </div>
+  );
+};
 
 Dashboard.parameters = { layout: "fullscreen" };
 
 const SECTIONS: {
   section: string;
-  cards: ({ title: string; badge?: string } & ChartProps)[];
+  cards: DashboardCard[];
 }[] = [
   {
     section: "Percentages",
@@ -88,7 +188,6 @@ const SECTIONS: {
         title: "CPU Usage - normal range",
         badge: "percent",
         type: "bar",
-        times: lastHour,
         series: [
           generateSeries({
             metric: "container.cpu.usage",
@@ -111,7 +210,6 @@ const SECTIONS: {
         title: "CPU Usage - exceeds 100%",
         badge: "percent",
         type: "bar",
-        times: lastHour,
         series: [
           generateSeries({
             metric: "container.cpu.usage",
@@ -134,7 +232,6 @@ const SECTIONS: {
         title: "Memory Usage - percentunit",
         badge: "percentunit",
         type: "line",
-        times: lastHour,
         series: [
           generateSeries({
             metric: "container.memory.usage",
@@ -158,11 +255,10 @@ const SECTIONS: {
         badge: "percent",
         type: "line",
         fill: true,
-        times: last24h,
         series: [
           generateSeries({
             metric: "disk.usage",
-            length: last24h.length,
+            length: LAST_24H_POINTS,
             pattern: "linear",
             min: 10,
             max: 45,
@@ -182,11 +278,10 @@ const SECTIONS: {
         title: "Network I/O - GiB range",
         badge: "bytes",
         type: "line",
-        times: last24h,
         series: [
           generateSeries({
             metric: "net.io",
-            length: last24h.length,
+            length: LAST_24H_POINTS,
             pattern: "random",
             min: 100_000_000,
             max: 5_000_000_000,
@@ -201,11 +296,10 @@ const SECTIONS: {
         title: "Filesystem - TiB range",
         badge: "bytes",
         type: "step",
-        times: last24h,
         series: [
           generateSeries({
             metric: "fs.usage",
-            length: last24h.length,
+            length: LAST_24H_POINTS,
             pattern: "linear",
             min: 100_000_000_000,
             max: 800_000_000_000,
@@ -221,7 +315,6 @@ const SECTIONS: {
         badge: "bytes/s",
         type: "line",
         fill: true,
-        times: lastHour,
         series: [
           generateSeries({
             metric: "net.throughput",
@@ -244,7 +337,6 @@ const SECTIONS: {
         title: "Bandwidth spike",
         badge: "bytes/s",
         type: "bar",
-        times: lastHour,
         series: [
           generateSeries({
             metric: "net.bandwidth",
@@ -272,7 +364,6 @@ const SECTIONS: {
         title: "Request Latency - ms",
         badge: "ms",
         type: "line",
-        times: lastHour,
         series: [
           generateSeries({
             metric: "req.latency",
@@ -291,7 +382,6 @@ const SECTIONS: {
         title: "GC Pause - µs range",
         badge: "µs",
         type: "bar",
-        times: lastHour,
         series: [
           generateSeries({
             metric: "gc.pause",
@@ -310,11 +400,10 @@ const SECTIONS: {
         title: "Job Duration - seconds",
         badge: "s",
         type: "bar",
-        times: last7d,
         series: [
           generateSeries({
             metric: "job.duration",
-            length: last7d.length,
+            length: LAST_7D_POINTS,
             pattern: "random",
             min: 10,
             max: 120,
@@ -329,11 +418,10 @@ const SECTIONS: {
         title: "Uptime - hours",
         badge: "h",
         type: "line",
-        times: last7d,
         series: [
           generateSeries({
             metric: "uptime",
-            length: last7d.length,
+            length: LAST_7D_POINTS,
             pattern: "linear",
             min: 0,
             max: 168,
@@ -353,7 +441,6 @@ const SECTIONS: {
         title: "Request breakdown - stacked area",
         badge: "area",
         type: "area",
-        times: lastHour,
         series: [
           generateSeries({
             metric: "req.error",
@@ -391,11 +478,10 @@ const SECTIONS: {
         badge: "line",
         type: "line",
         fill: true,
-        times: last24h,
         series: [
           generateSeries({
             metric: "cpu.usage",
-            length: last24h.length,
+            length: LAST_24H_POINTS,
             pattern: "random",
             min: 10,
             max: 60,
@@ -404,7 +490,7 @@ const SECTIONS: {
           }),
           generateSeries({
             metric: "cpu.usage",
-            length: last24h.length,
+            length: LAST_24H_POINTS,
             pattern: "sine",
             min: 30,
             max: 80,
@@ -413,7 +499,7 @@ const SECTIONS: {
           }),
           generateSeries({
             metric: "cpu.usage",
-            length: last24h.length,
+            length: LAST_24H_POINTS,
             pattern: "random",
             min: 5,
             max: 30,
@@ -429,12 +515,11 @@ const SECTIONS: {
         title: "Log volume - 30 days",
         badge: "bar",
         type: "bar",
-        times: last30d,
         colors: ["#1D3D14", "#7D9984"],
         series: [
           generateSeries({
             metric: "Logs",
-            length: last30d.length,
+            length: LAST_30D_POINTS,
             pattern: "spike",
             min: 0,
             max: 2_000_000,
@@ -442,7 +527,7 @@ const SECTIONS: {
           }),
           generateSeries({
             metric: "Metrics",
-            length: last30d.length,
+            length: LAST_30D_POINTS,
             pattern: "random",
             min: 0,
             max: 3_000_000,
@@ -469,12 +554,6 @@ const SECTIONS: {
         badge: "spline",
         type: "spline",
         fill: true,
-        times: generateTimes({
-          duration: 30,
-          durationUnit: "day",
-          interval: 1,
-          intervalUnit: "day",
-        }),
         series: [
           generateSeries({
             metric: "user.count",
@@ -498,11 +577,10 @@ const SECTIONS: {
         title: "Memory - range thresholds",
         badge: "percent",
         type: "bar",
-        times: last24h,
         series: [
           generateSeries({
             metric: "mem.usage",
-            length: last24h.length,
+            length: LAST_24H_POINTS,
             pattern: "spike",
             min: 0,
             max: 100,
@@ -521,11 +599,10 @@ const SECTIONS: {
         title: "Filesystem - line thresholds",
         badge: "bytes",
         type: "step",
-        times: last24h,
         series: [
           generateSeries({
             metric: "fs.usage",
-            length: last24h.length,
+            length: LAST_24H_POINTS,
             pattern: "linear",
             min: 100,
             max: 100_000_000_000,
@@ -553,7 +630,6 @@ const SECTIONS: {
         title: "All zeros",
         badge: "edge",
         type: "line",
-        times: lastHour,
         series: [
           generateSeries({
             metric: "cpu.usage",
@@ -573,7 +649,6 @@ const SECTIONS: {
         title: "Half period data",
         badge: "edge",
         type: "line",
-        times: lastHour,
         series: [
           generateSeries({
             metric: "cpu.usage",
@@ -595,7 +670,6 @@ const SECTIONS: {
         hideAxis: true,
         hideCursor: true,
         tooltip: { hide: true },
-        times: lastHour,
         series: [
           generateSeries({
             metric: "req.count",
@@ -615,7 +689,6 @@ const SECTIONS: {
         badge: "edge",
         type: "area",
         relativeTimeAxis: true,
-        times: lastHour,
         series: [
           generateSeries({
             metric: "req.count",

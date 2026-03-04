@@ -1,25 +1,24 @@
 import { dateTimeFormat } from "@unblind/units";
 import { createContext, Fragment, PropsWithChildren, useContext } from "react";
 import { TooltipSerie } from "@/types";
+import { TooltipSerieListOptions } from "./plugin";
 
 // Types
 export interface TooltipProps {
   timestamp: number;
   serieList: TooltipSerie[];
-  timeZone?: string;
-  stacked?: boolean;
-  invertSort?: boolean;
-  visibilityLimit?: number;
-  disableSuggestedLabel?: boolean;
+  options: {
+    timeZone?: string;
+    stacked?: boolean;
+    invertSort?: boolean;
+    visibilityLimit?: number;
+    disableSuggestedLabel?: boolean;
+  };
 }
 
-interface TooltipExtendedProps extends TooltipProps {
-  spansMultipleDays?: boolean;
-  hasMultipleMetrics: boolean;
-  hasMultipleAttributes: boolean;
-  hasAttributes: boolean;
-  maxAttributeKeySetCount: number;
-}
+type TooltipExtendedProps = TooltipProps & {
+  serieListOptions: TooltipSerieListOptions;
+};
 
 const DEFAULT_VISIBILITY_LIMIT = 6;
 
@@ -42,12 +41,9 @@ function SerieProvider({
     <SerieContext.Provider value={serie}>{children}</SerieContext.Provider>
   );
 }
-// Context for tooltip
+
 const TooltipContext = createContext<
-  | (Pick<
-      TooltipProps,
-      "disableSuggestedLabel" | "invertSort" | "visibilityLimit"
-    > & {
+  | (Pick<TooltipProps, "options"> & {
       formattedTime: string;
       serieList: Array<TooltipSerie>;
       maxAttributeKeySetCount: number;
@@ -72,19 +68,19 @@ function TooltipProvider({
 }: PropsWithChildren & {
   maxAttributeKeySetCount: number;
   formattedTime: string;
-  tooltip: Pick<
-    TooltipProps,
-    "disableSuggestedLabel" | "invertSort" | "visibilityLimit"
-  >;
+  tooltip: Pick<TooltipProps, "options">;
   serieList: Array<TooltipSerie>;
 }) {
   return (
     <TooltipContext.Provider
       value={{
+        options: {
+          disableSuggestedLabel: tooltip.options.disableSuggestedLabel,
+          invertSort: tooltip.options.invertSort,
+          visibilityLimit:
+            tooltip.options.visibilityLimit || DEFAULT_VISIBILITY_LIMIT,
+        },
         formattedTime,
-        disableSuggestedLabel: tooltip.disableSuggestedLabel,
-        invertSort: tooltip.invertSort,
-        visibilityLimit: tooltip.visibilityLimit || DEFAULT_VISIBILITY_LIMIT,
         serieList,
         maxAttributeKeySetCount,
       }}
@@ -94,25 +90,15 @@ function TooltipProvider({
   );
 }
 
-function Divider({
-  className = "ub-tooltip-divider",
-  ...props
-}: React.ComponentPropsWithoutRef<"hr">) {
-  return <hr role="presentation" {...props} className={className} />;
-}
-
 function MetricsTooltip() {
-  const { visibilityLimit, formattedTime, serieList } = useTooltip();
+  const { options, formattedTime, serieList } = useTooltip();
+  const { visibilityLimit } = options;
   const visibleSeries = serieList.slice(0, visibilityLimit);
   const afterLimit = serieList.slice(visibilityLimit);
 
   return (
     <div className="ub-tooltip ub-tooltip-multiple-metrics">
-      <Header>
-        <DateTime>{formattedTime}</DateTime>
-      </Header>
-      <Divider />
-      <div>
+      <Container>
         <Content>
           {visibleSeries.map((x) => (
             <Serie serie={x} key={x.metric.name}>
@@ -123,24 +109,24 @@ function MetricsTooltip() {
           ))}
         </Content>
         <Summary series={afterLimit} />
-      </div>
+      </Container>
+      <Footer>
+        <DateTime>{formattedTime}</DateTime>
+      </Footer>
     </div>
   );
 }
 
 function MultipleAttributesTooltip() {
-  const { visibilityLimit, formattedTime, serieList } = useTooltip();
+  const { options, formattedTime, serieList } = useTooltip();
+  const { visibilityLimit } = options;
 
   const visibleSeries = serieList.slice(0, visibilityLimit);
   const afterLimit = serieList.slice(visibilityLimit);
 
   return (
     <div className="ub-tooltip ub-tooltip-multiple-attributes">
-      <Header>
-        <DateTime>{formattedTime}</DateTime>
-      </Header>
-      <Divider />
-      <div>
+      <Container>
         <Content>
           {visibleSeries.map((x, i) => (
             <Serie serie={x} key={"serie_" + i}>
@@ -151,23 +137,23 @@ function MultipleAttributesTooltip() {
           ))}
         </Content>
         <Summary series={afterLimit} />
-      </div>
+      </Container>
+      <Footer>
+        <DateTime>{formattedTime}</DateTime>
+      </Footer>
     </div>
   );
 }
 
 function MultipleAttributesMultipleMetricsTooltip() {
-  const { visibilityLimit, formattedTime, serieList } = useTooltip();
+  const { options, formattedTime, serieList } = useTooltip();
+  const { visibilityLimit } = options;
   const visibleSeries = serieList.slice(0, visibilityLimit);
   const afterLimit = serieList.slice(visibilityLimit);
 
   return (
     <div className="ub-tooltip ub-tooltip-multiple-metrics-attributes">
-      <Header>
-        <DateTime>{formattedTime}</DateTime>
-      </Header>
-      <Divider />
-      <div>
+      <Container>
         <Content>
           {visibleSeries.map((x, i) => (
             <Serie serie={x} key={"serie" + i}>
@@ -179,7 +165,10 @@ function MultipleAttributesMultipleMetricsTooltip() {
           ))}
         </Content>
         <Summary series={afterLimit} />
-      </div>
+      </Container>
+      <Footer>
+        <DateTime>{formattedTime}</DateTime>
+      </Footer>
     </div>
   );
 }
@@ -188,7 +177,8 @@ function Summary({ series }: { series: Array<TooltipSerie> }) {
   const formattedVal = series[0]?.formattedValue;
   const allZeroes = !series.some((x) => (x.value || 0) > 0);
   const allUndefined = !series.some((x) => x.value !== undefined);
-  const { invertSort } = useTooltip();
+  const { options } = useTooltip();
+  const { invertSort } = options;
 
   if (series.length > 0) {
     if (allUndefined) {
@@ -210,7 +200,7 @@ function Summary({ series }: { series: Array<TooltipSerie> }) {
     return (
       <span className="ub-tooltip-summary">
         <span>+{series.length} more with </span>
-        <span>{`${invertSort ? "≥" : "≤"} ${formattedVal}`}</span>
+        <span className="ub-tooltip-serie-value">{`${invertSort ? "≥" : "≤"} ${formattedVal}`}</span>
       </span>
     );
   }
@@ -238,8 +228,12 @@ function Content(props: PropsWithChildren) {
   );
 }
 
-function Header(props: PropsWithChildren) {
-  return <div className="ub-tooltip-header">{props.children}</div>;
+function Container(props: PropsWithChildren) {
+  return <div className="ub-tooltip-container">{props.children}</div>;
+}
+
+function Footer(props: PropsWithChildren) {
+  return <div className="ub-tooltip-footer">{props.children}</div>;
 }
 
 function DateTime(props: PropsWithChildren) {
@@ -248,7 +242,9 @@ function DateTime(props: PropsWithChildren) {
 
 function Metric() {
   const serie = useTooltipSerie();
-  const { disableSuggestedLabel } = useTooltip();
+  const { options } = useTooltip();
+  const { disableSuggestedLabel } = options;
+
   return (
     <span className="ub-tooltip-serie-metric ub-truncate">
       {serie.metric.label ||
@@ -270,7 +266,12 @@ function Value() {
 function Color() {
   const { color: backgroundColor } = useTooltipSerie();
   return (
-    <span style={{ backgroundColor }} className="ub-tooltip-serie-color" />
+    <div className="ub-tooltip-serie-color-container">
+      <span
+        style={{ backgroundColor }}
+        className="ub-tooltip-serie-color"
+      ></span>
+    </div>
   );
 }
 
@@ -284,7 +285,7 @@ function Attributes() {
 
   return (
     <div className="ub-tooltip-serie-attributes ub-truncate">
-      {attributeValues.map((attributeValue, index) => (
+      {attributeValues.map((attributeValue) => (
         <Fragment key={"tooltip-" + attributeValue}>
           <span className="ub-tooltip-serie-attribute-value ub-truncate">
             {attributeValue}
@@ -319,15 +320,17 @@ export function sortSeriesByValue({
 export function Tooltip({
   timestamp,
   serieList: unsortedserieList,
-  timeZone,
-  spansMultipleDays,
-  hasMultipleMetrics,
-  hasAttributes,
-  maxAttributeKeySetCount,
-  invertSort,
-  visibilityLimit,
-  disableSuggestedLabel,
+  serieListOptions,
+  options,
 }: TooltipExtendedProps) {
+  const { timeZone, invertSort, visibilityLimit, disableSuggestedLabel } =
+    options;
+  const {
+    spansMultipleDays,
+    hasMultipleMetrics,
+    hasAttributes,
+    maxAttributeKeySetCount,
+  } = serieListOptions;
   const serieList = sortSeriesByValue({
     serieList: unsortedserieList,
     invertSort,
@@ -346,9 +349,11 @@ export function Tooltip({
     return (
       <TooltipProvider
         tooltip={{
-          invertSort,
-          visibilityLimit,
-          disableSuggestedLabel,
+          options: {
+            invertSort,
+            visibilityLimit,
+            disableSuggestedLabel,
+          },
         }}
         formattedTime={formattedTime}
         serieList={serieList}
@@ -363,9 +368,11 @@ export function Tooltip({
     return (
       <TooltipProvider
         tooltip={{
-          invertSort,
-          visibilityLimit,
-          disableSuggestedLabel,
+          options: {
+            invertSort,
+            visibilityLimit,
+            disableSuggestedLabel,
+          },
         }}
         formattedTime={formattedTime}
         serieList={serieList}
@@ -379,9 +386,11 @@ export function Tooltip({
   return (
     <TooltipProvider
       tooltip={{
-        invertSort,
-        visibilityLimit,
-        disableSuggestedLabel,
+        options: {
+          invertSort,
+          visibilityLimit,
+          disableSuggestedLabel,
+        },
       }}
       formattedTime={formattedTime}
       serieList={serieList}
