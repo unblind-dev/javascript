@@ -124,7 +124,6 @@ function buildTooltipSerieListParams(
     const originalSerie = series?.[seriesIndex - 1];
 
     if (!originalSerie) {
-      console.warn("Original serie not found");
       continue;
     }
 
@@ -273,6 +272,7 @@ class TooltipController {
   };
 
   private handleCursor(u: uPlot) {
+    this.syncBounds();
     const { left, top, idx } = u.cursor;
 
     // Safety guard: prevent background rendering & accumulation
