@@ -26,7 +26,9 @@ export type {
 export { useUsage } from "./hooks/useUsage";
 export type { UseUsageParams, UseUsageReturn, Usage } from "./hooks/useUsage";
 export { useLogs } from "./hooks/useLogs";
+export { useTraces } from "./hooks/useTraces";
 export type { UseLogsParams, UseLogsReturn } from "./hooks/useLogs";
+export type { UseTracesParams, UseTracesReturn } from "./hooks/useTraces";
 import "./styles.css";
 
 // Components
@@ -56,4 +58,7 @@ export type {
   Interval,
   ChartVisualConfig,
   Appearance,
+  Span,
+  SpanKind,
+  StatusCode,
 } from "./types";

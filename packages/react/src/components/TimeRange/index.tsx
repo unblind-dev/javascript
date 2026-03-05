@@ -27,8 +27,6 @@ import { type TimeRangeValue } from "@unblind/units";
 import { useRefresh } from "@/providers/UnblindProvider";
 
 const DEFAULT_RANGE_LABEL = "Past 6 Hours";
-const CALENDAR_RANGES_REFRESH_MS = 60_000;
-const BLUR_COMMIT_DELAY_MS = 100;
 
 export interface TimeRangeProps {
   disabled?: boolean;
@@ -105,26 +103,20 @@ export function TimeRange({
   const committedStartTime = useRef(startTime);
   const committedEndTime = useRef(endTime);
 
-  const [calendarRanges, setCalendarRanges] = useState(getCalendarRanges);
   const [isInvalid, setIsInvalid] = useState(false);
 
+  const calendarRanges = useMemo(() => getCalendarRanges(), []);
   const allRanges = useMemo(
     () => [...RELATIVE_RANGES, ...calendarRanges],
     [calendarRanges],
   );
 
   const initialLabel = useMemo(() => {
-    if (startTime && endTime) {
+    if (startTime != null && endTime != null) {
       return formatTimeRangeLabel(startTime, endTime, timeZone);
     }
-    if (scopeTimeRange) {
-      return (
-        allRanges.find((r) => r.value === scopeTimeRange)?.label ??
-        DEFAULT_RANGE_LABEL
-      );
-    }
-    return DEFAULT_RANGE_LABEL;
-  }, [startTime, endTime, scopeTimeRange, timeZone, allRanges]);
+    return scopeTimeRange;
+  }, [startTime, endTime, scopeTimeRange, timeZone]);
 
   const [inputValue, setInputValue] = useState(initialLabel);
   const [isOpen, setIsOpen] = useState(false);
@@ -132,19 +124,11 @@ export function TimeRange({
   const [hasInputFocus, setHasInputFocus] = useState(false);
 
   const committedValue = useRef(initialLabel);
+  const commitLockRef = useRef(false);
 
   const inputRef = useRef<HTMLInputElement>(null);
   const listboxRef = useRef<HTMLUListElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
-
-  // Refresh dynamic badges every minute
-  useEffect(() => {
-    const timer = setInterval(
-      () => setCalendarRanges(getCalendarRanges()),
-      CALENDAR_RANGES_REFRESH_MS,
-    );
-    return () => clearInterval(timer);
-  }, []);
 
   const isAbsoluteRange = startTime != null && endTime != null;
 
@@ -195,9 +179,23 @@ export function TimeRange({
 
   const commit = useCallback(
     (label: string, value: TimeRangeValue) => {
+      if (commitLockRef.current) return;
+      commitLockRef.current = true;
+      setTimeout(() => {
+        commitLockRef.current = false;
+      }, 100);
+
       setInputValue(label);
       committedValue.current = label;
       close();
+      if (
+        startTime == null &&
+        endTime == null &&
+        scopeTimeRange &&
+        value === scopeTimeRange
+      ) {
+        return;
+      }
       const raw = parseHumanInput(label);
       if (raw) {
         const now = dateTimeForTimeZone(timeZone);
@@ -219,7 +217,7 @@ export function TimeRange({
         }
       }
     },
-    [close, timeZone, updateTimeRange],
+    [close, timeZone, updateTimeRange, startTime, endTime, scopeTimeRange],
   );
 
   const selectOption = useCallback(
@@ -250,6 +248,14 @@ export function TimeRange({
       setInputValue(label);
     }
   }, [startTime, endTime, timeZone]);
+
+  // useEffect(() => {
+  //   if (startTime != null || endTime != null) return;
+  //   if (!scopeTimeRange) return;
+  //   const label = allRanges.find((r) => r.value === scopeTimeRange)?.label;
+  //   committedValue.current = label;
+  //   setInputValue(label);
+  // }, [allRanges, scopeTimeRange, startTime, endTime]);
 
   const activeOptionId =
     isOpen && activeIndex >= 0 ? `${id}-opt-${activeIndex}` : undefined;
@@ -289,6 +295,12 @@ export function TimeRange({
             selectOption(option);
           }
         } else {
+          const selectedOption = allRanges.find((r) => r.label === inputValue);
+          if (selectedOption) {
+            // e.currentTarget.blur();
+            commit(selectedOption.label, selectedOption.value);
+            break;
+          }
           const raw = parseHumanInput(inputValue);
           if (raw) {
             commit(inputValue, inputValue as TimeRangeValue);
@@ -300,8 +312,9 @@ export function TimeRange({
 
       case "Escape":
       case "Esc":
-        e.preventDefault();
+        e.currentTarget.blur();
         revert();
+        setIsInvalid(false);
         break;
 
       case "Tab":
@@ -365,17 +378,7 @@ export function TimeRange({
             onFocus={() => setHasInputFocus(true)}
             onBlur={() => {
               setHasInputFocus(false);
-              setTimeout(() => {
-                if (!containerRef.current?.contains(document.activeElement)) {
-                  const raw = parseHumanInput(inputValue);
-                  if (raw) {
-                    commit(inputValue, inputValue as TimeRangeValue);
-                  } else {
-                    revert();
-                    setIsInvalid(false);
-                  }
-                }
-              }, BLUR_COMMIT_DELAY_MS);
+              close();
             }}
             onClick={() => (isOpen ? close() : open())}
           />
@@ -437,8 +440,7 @@ export function TimeRange({
                   role="option"
                   aria-selected={index === activeIndex}
                   className="ub-timerange-option"
-                  onPointerDown={(e) => {
-                    e.preventDefault();
+                  onPointerDown={() => {
                     selectOption(option);
                   }}
                   onPointerEnter={() => setActiveIndex(index)}

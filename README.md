@@ -54,13 +54,13 @@
 4. Add Unblind proxy:
 
   ```typescript
-    // Works also for middleware
-    import { unblindProxy } from "@unblind/nextjs/server";
-    export default unblindProxy((req) => req.cookies.get("userId")?.value);
-  
-    export const config = {
-      matcher: "/api/unblind/:path*",
-    };
+  // Works also for middleware
+  import { unblindProxy } from "@unblind/nextjs/server";
+  export default unblindProxy((req) => req.cookies.get("userId")?.value);
+
+  export const config = {
+    matcher: "/api/unblind/:path*",
+  };
   ```
 
 5. Add Unblind provider:
@@ -165,6 +165,8 @@
   relativeTimeAxis={false}
   invertSort={false}
   disableSuggestedLabel={false}
+  // Defaults to browser default
+  timezone={undefined}
 >
   {/* ... */}
 </Timeseries>
@@ -177,6 +179,7 @@ const { times, series, metadata, isLoading } = useTimeseries({
   metrics: "nodejs.eventloop.p50",
 });
 const { logs, isLoading } = useLogs({ severity: ["ERROR", "WARN"] });
+const { traces, isLoading } = useTraces({ traceId: ["6e1218911f315624b8"], spanId: ["1a0bc93ff7d45b3338"] });
 
 // Returns global metrics
 const { metrics } = useMetrics();

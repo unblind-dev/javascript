@@ -213,8 +213,40 @@ export const AreaStacking: Story = {
 };
 
 export const MinimalStatic: Story = {
+  decorators: [
+    (Story) => (
+      <div style={{ position: "relative", width: "100%", height: "100%" }}>
+        <Story />
+        <div
+          style={{
+            position: "absolute",
+            width: "100%",
+            height: "100%",
+            backgroundColor: "#00000011",
+            top: 0,
+            borderRadius: "10px",
+            display: "grid",
+            color: "#0a0a0a88",
+            fontFamily: "ui-monospace",
+          }}
+        >
+          <p
+            style={{
+              marginTop: "1rem",
+              marginLeft: "auto",
+              marginRight: "auto",
+              fontSize: "3rem",
+            }}
+          >
+            32GiB
+          </p>
+        </div>
+      </div>
+    ),
+  ],
   args: {
     type: "bar",
+    fill: true,
     hideAxis: true,
     hideCursor: true,
     tooltip: {
@@ -223,41 +255,15 @@ export const MinimalStatic: Story = {
     times: timePresets.lastHourByMinute(),
     series: [
       generateSeries({
-        metric: "server.request.error",
-        length: 60,
-        pattern: "spike",
-        min: 0,
-        max: 50,
-        queryIndex: 0,
-      }),
-      generateSeries({
-        metric: "server.request.warning",
-        length: 60,
-        pattern: "random",
-        min: 0,
-        max: 30,
-        queryIndex: 0,
-      }),
-      generateSeries({
         metric: "server.request.info",
         length: 60,
-        pattern: "random",
-        min: 0,
+        pattern: "spike",
+        min: 10,
         max: 80,
         queryIndex: 0,
       }),
     ],
     metadata: generateMetadataDict([
-      {
-        name: "server.request.error",
-        description: "Error rate per minute",
-        suggestedLabel: "Error",
-      },
-      {
-        name: "server.request.warning",
-        description: "Warning rate per minute",
-        suggestedLabel: "Warning Rate",
-      },
       {
         name: "server.request.info",
         description: "Info rate per minute",

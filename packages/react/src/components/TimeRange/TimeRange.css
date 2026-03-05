@@ -198,6 +198,10 @@
   animation: ub-shake 0.35s ease;
 }
 
+.ub-timerange-trigger.invalid > .ub-timerange-listbox {
+  visibility: hidden;
+}
+
 @keyframes ub-shake {
   0%,
   100% {

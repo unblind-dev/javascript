@@ -14,7 +14,9 @@ export interface Usage {
     units: number;
   };
   logs: {
-    bytes: number;
+    units: number;
+  };
+  traces: {
     units: number;
   };
 }
