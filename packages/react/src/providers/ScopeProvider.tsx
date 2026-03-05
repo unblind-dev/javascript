@@ -269,7 +269,7 @@ export function Scope({
   );
 }
 
-const DEFAULT_TIMERANGE: TimeRangeValue = "Last 6 hours";
+const DEFAULT_TIMERANGE: TimeRangeValue = "Past 6 hours";
 
 export type UseScopeReturn = TimeseriesQueryConfig &
   ChartVisualConfig & {
