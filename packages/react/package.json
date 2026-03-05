@@ -1,6 +1,6 @@
 {
   "name": "@unblind/react",
-  "version": "0.1.0-beta.3",
+  "version": "0.1.0-beta.2",
   "description": "Unblind React library",
   "main": "dist/index.js",
   "module": "dist/index.mjs",
